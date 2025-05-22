@@ -1,0 +1,34 @@
+@startuml
+actor UsuariVerificador
+boundary InterficieUsuari
+control ServeiAcreditacions
+control GestorBlockchain
+entity AcreditacioBlockchain
+
+UsuariVerificador -> InterficieUsuari:  Verificar Acreditació Laboratori
+InterficieUsuari -> ServeiAcreditacions: VerificarAcreditacioLaboratori()
+InterficieUsuari -> ServeiAcreditacions: Identificador Laboratori i Anàlit
+ServeiAcreditacions -> GestorBlockchain: consultarAcreditacionsLaboratori(clau)
+GestorBlockchain -> Blockchain: Consulta Registre d'Acreditacions (per clau)
+Blockchain --> GestorBlockchain: Llista<AcreditacioBlockchain>
+
+alt Llista d'Acreditacions trobada
+  loop per a cada acreditacioBlockchain
+    ServeiAcreditacions -> ServeiAcreditacions: verificarAcreditacioPerAnalit(acr, analit)
+    alt Acreditació vàlida per l'anàlit
+      ServeiAcreditacions --> InterficieUsuari: Laboratori Acreditat per l'anàlit
+      InterficieUsuari -> UsuariVerificador: Mostra resultat (Laboratori Acreditat)
+      break
+    else Acreditació no vàlida per a l'anàlit
+    end
+  end
+else Llista d'Acreditacions no trobada
+  ServeiAcreditacions --> InterficieUsuari:  No trobat o sense acreditacions
+  InterficieUsuari -> UsuariVerificador: Mostra resultat (sense acr.)
+end
+
+alt Final de la cerca sense trobar acreditació vàlida
+  ServeiAcreditacions --> InterficieUsuari: No acreditat per a l'anàlit
+  InterficieUsuari -> UsuariVerificador: Mostra resultat (no acred.)
+end
+@enduml

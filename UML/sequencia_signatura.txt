@@ -1,0 +1,22 @@
+@startuml
+participant Laboratori
+participant "Generador de Hash" as HashGen
+participant "Signador de Documents" as Signador
+participant "Registre a la Blockchain" as BlockchainReg
+participant Blockchain
+
+Laboratori -> HashGen: Envia Document PDF
+HashGen -> HashGen: Calcula Hash del Document
+HashGen --> Laboratori: Hash del Document
+
+Laboratori -> Signador: Envia Hash del Document i Clau Privada
+Signador -> Signador: Signa el Hash amb la Clau Privada
+Signador --> Laboratori: Signatura Digital
+
+Laboratori -> BlockchainReg: Envia Hash del Document, Signatura Digital i Clau Pública
+BlockchainReg -> Blockchain: Crea Transacció
+Blockchain <-- Blockchain: Transacció Confirmada
+BlockchainReg --> Laboratori: ID de Transacció
+
+Laboratori -> Laboratori: Emmagatzema ID de Transacció
+@enduml

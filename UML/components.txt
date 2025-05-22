@@ -1,0 +1,56 @@
+@startuml
+package "Sistema de Signatura i Acreditació Blockchain" {
+  [Laboratori]
+  [Usuari/Verificador]
+
+  package "Component de Signatura de Documents" {
+    [Generador de Hash]
+    [Signador de Documents]
+    [Registre a la Blockchain]
+  }
+
+  package "Component de Verificació de Documents" {
+    [Recuperador de Hash de la Blockchain]
+    [Verificador de Signatura]
+    [Calculador de Hash]
+  }
+
+  package "Component de Gestió d'Acreditacions" {
+    [Registre d'Acreditacions a la Blockchain]
+    [Consulta d'Acreditacions a la Blockchain]
+    [Emmagatzematge d'Acreditacions (Local/Distribuït)]
+  }
+
+  [Laboratori] -- [Generador de Hash]
+  [Laboratori] -- [Signador de Documents]
+  [Generador de Hash] --> [Signador de Documents] : Utilitza
+  [Signador de Documents] --> [Registre a la Blockchain] : Utilitza
+
+  [Usuari/Verificador] -- [Recuperador de Hash de la Blockchain]
+  [Usuari/Verificador] -- [Verificador de Signatura]
+  [Usuari/Verificador] -- [Calculador de Hash]
+  [Recuperador de Hash de la Blockchain] --> [Verificador de Signatura] : Utilitza
+  [Calculador de Hash] --> [Verificador de Signatura] : Utilitza
+
+  [Laboratori] -- [Registre d'Acreditacions a la Blockchain]
+  [Usuari/Verificador] -- [Consulta d'Acreditacions a la Blockchain]
+  [Registre d'Acreditacions a la Blockchain] --> [Emmagatzematge d'Acreditacions (Local/Distribuït)] : Utilitza
+  [Consulta d'Acreditacions a la Blockchain] --> [Emmagatzematge d'Acreditacions (Local/Distribuït)] : Consulta
+
+  [Laboratori] -- [Component de Signatura de Documents]
+  [Laboratori] -- [Component de Gestió d'Acreditacions]
+
+  [Usuari/Verificador] -- [Component de Verificació de Documents]
+  [Usuari/Verificador] -- [Component de Gestió d'Acreditacions]
+}
+
+node "Blockchain" {
+  [Registre de Documents Signats]
+  [Registre d'Acreditacions]
+} 
+
+[Registre a la Blockchain] --> [Registre de Documents Signats] : Interactua
+[Recuperador de Hash de la Blockchain] --> [Registre de Documents Signats] : Interactua
+[Registre d'Acreditacions a la Blockchain] --> [Registre d'Acreditacions] : Interactua
+[Consulta d'Acreditacions a la Blockchain] --> [Registre d'Acreditacions] : Interactua
+@enduml

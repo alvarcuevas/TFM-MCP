@@ -1,0 +1,85 @@
+@startuml
+package "Sistema de Signatura i Acreditació Blockchain" {
+  class Laboratori {
+    +clauPublica: String
+    +clauPrivada: String
+    +registrarAcreditacio(acreditacio: Acreditacio): IDTransaccio
+    +signarDocument(document: Document): SignaturaBlockchain
+  }
+
+  class UsuariVerificador {
+    +verificarDocument(document: Document, signaturaBlockchain: SignaturaBlockchain, clauPublicaLaboratori: String): boolean
+    +consultarAcreditacions(clauPublicaLaboratori: String): List<AcreditacioBlockchain>
+  }
+
+  class Document {
+    +identificador: String
+    +contingut: byte[]
+    +calcularHash(): String
+  }
+
+  class SignaturaBlockchain {
+    +hashDocument: String
+    +valorSignatura: String
+    +clauPublicaSignant: String
+    +timestamp: DateTime
+    +IDTransaccio: String
+  }
+
+  class Acreditacio {
+    +identificador: String
+    +nom: String
+    +descripcio: String
+    +dataEmissio: DateTime
+    +entitatEmissora: String
+    +hashReferenciaBlockchain: String
+  }
+
+  class AcreditacioBlockchain {
+    +clauPublicaLaboratori: String
+    +hashAcreditacio: String
+    +valorSignatura: String
+    +timestamp: DateTime
+    +IDTransaccio: String
+  }
+
+  enum TipusDocument {
+    +PDF
+    +DadesProcessables
+    +ResultatParcial
+  }
+
+  Laboratori --* Document : Signa >
+  Laboratori "1" -- "*" Acreditacio : Té >
+  SignaturaBlockchain --* Document : Signa (via hash) >
+  AcreditacioBlockchain --* Laboratori : Acredita >
+
+  UsuariVerificador ..> Document : Verifica
+  UsuariVerificador ..> SignaturaBlockchain : Verifica
+  UsuariVerificador ..> Laboratori : Consulta acreditacions de
+  UsuariVerificador ..> AcreditacioBlockchain : Consulta
+
+  Document -- TipusDocument : És de tipus >
+}
+
+package "Blockchain" {
+  class RegistreSignatures {
+    +IDTransaccio: String (PK)
+    +hashDocument: String
+    +valorSignatura: String
+    +clauPublicaSignant: String
+    +timestamp: DateTime
+  }
+
+  class RegistreAcreditacionsBlockchain {
+    +IDTransaccio: String (PK)
+    +clauPublicaLaboratori: String
+    +hashAcreditacio: String
+    +valorSignatura: String
+    +timestamp: DateTime
+  }
+
+  RegistreSignatures -- SignaturaBlockchain : <<mapsTo>>
+  RegistreAcreditacionsBlockchain -- AcreditacioBlockchain : <<mapsTo>>
+}
+@enduml

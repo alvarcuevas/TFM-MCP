@@ -1,0 +1,1896 @@
+<!DOCTYPE html>
+<html lang="val">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verificar, Eliminar i Firmar Documents (Ethers.js / Keccak256)</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.2.0/ethers.umd.min.js" type="application/javascript"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f4f4f4; /* Color per defecte */
+            color: #333;
+            transition: background-color 0.5s ease; /* Transició suau per al canvi de fons */
+        }
+        body.mode-solitary {
+            background-color: #f4f4f4; /* Mode Solitari: Gris clar */
+        }
+        body.mode-api {
+            background-color: #e0f7fa; /* Mode API: Blau cel clar */
+        }
+
+        /* Estils per a l'interruptor de mode */
+        .mode-toggle-container {
+            text-align: center;
+            margin-bottom: 20px;
+            padding: 10px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 80px;
+            height: 34px;
+            margin: 0 10px;
+        }
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            -webkit-transition: .4s;
+            transition: .4s;
+            border-radius: 34px;
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 26px;
+            width: 26px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            -webkit-transition: .4s;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        input:checked + .slider {
+            background-color: #2196F3;
+        }
+        input:focus + .slider {
+            box-shadow: 0 0 1px #2196F3;
+        }
+        input:checked + .slider:before {
+            -webkit-transform: translateX(46px);
+            -ms-transform: translateX(46px);
+            transform: translateX(46px);
+        }
+        .slider.round {
+            border-radius: 34px;
+        }
+        .slider.round:before {
+            border-radius: 50%;
+        }
+        .mode-label {
+            font-weight: bold;
+            display: inline-block;
+            vertical-align: middle;
+        }
+
+
+        .container {
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            max-width: 800px;
+            margin: 0 auto;
+            margin-bottom: 30px; /* Espai al final */
+        }
+        h1 {
+            color: #0056b3;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .section-title {
+            color: #0056b3;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
+            margin-top: 40px;
+            margin-bottom: 20px;
+        }
+        .input-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+        input[type="file"], input[type="text"], button, textarea {
+            width: 100%;
+            padding: 10px;
+            margin-top: 5px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s ease;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        #result {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #e2f0cb;
+            border: 1px solid #c8e6c9;
+            border-radius: 4px;
+            word-wrap: break-word;
+            white-space: pre-wrap;
+            font-size: 14px;
+            color: #2e7d32;
+        }
+        #result.error {
+            background-color: #fcc;
+            border-color: #f66;
+            color: #d32f2f;
+        }
+        .signer-list {
+            list-style: none;
+            padding: 0;
+            margin-top: 10px;
+        }
+        .signer-item {
+            background-color: #f9f9f9;
+            border: 1px solid #eee;
+            padding: 10px 15px;
+            margin-bottom: 10px;
+            border-radius: 4px;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+        .signer-item span {
+            margin-bottom: 3px;
+        }
+        .signer-item strong {
+            color: #555;
+            margin-right: 5px;
+        }
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+            flex-wrap: wrap; /* Permet que els botons s'ajusten si no hi ha espai */
+        }
+        .verify-button {
+            background-color: #ffc107; /* Taronja inicial */
+            color: #333; /* Text fosc per a un bon contrast */
+        }
+        .verify-button:hover {
+            background-color: #e0a800; /* Taronja més fosc en hover */
+        }
+        /* Nova classe per al botó de verificació vàlida */
+        .verify-button.valid {
+            background-color: #28a745; /* Verd */
+            color: white;
+        }
+        .verify-button.valid:hover {
+            background-color: #218838; /* Verd més fosc en hover */
+        }
+        .invalidate-button {
+            background-color: #dc3545;
+        }
+        .invalidate-button:hover {
+            background-color: #c82333;
+        }
+        .sign-button {
+            background-color: #ffc107;
+            color: #333;
+        }
+        .sign-button:hover {
+            background-color: #e0a800;
+        }
+        /* Nou estil per al botó de "Veure Info Laboratori" */
+        .lab-info-button {
+            background-color: #17a2b8; /* Turquesa/blau clar */
+            color: white;
+        }
+        .lab-info-button:hover {
+            background-color: #138496;
+        }
+
+        .verify-button, .invalidate-button, .sign-button, .lab-info-button {
+            border: none;
+            padding: 8px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            flex-grow: 1; 
+            text-align: center;
+        }
+        .verification-status, .invalidation-status, .signing-status, .lab-info-status {
+            margin-top: 8px;
+            padding: 6px 10px;
+            border-radius: 3px;
+            font-size: 12px;
+            font-weight: bold;
+            color: white;
+            align-self: flex-start;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .verification-status.success, .invalidation-status.success, .signing-status.success {
+            background-color: #28a745;
+        }
+        .verification-status.failure, .invalidation-status.failure, .signing-status.failure {
+            background-color: #dc3545;
+        }
+        .lab-info-status.info { /* Per a mostrar info del lab */
+            background-color: #f8f9fa; /* Color clar per al fons */
+            color: #333; /* Text fosc */
+            border: 1px solid #dee2e6;
+            word-break: break-all;
+            white-space: pre-wrap;
+            margin-top: 10px; /* Espai addicional per a la informació del lab */
+        }
+        /* Noves classes per a l'estat de verificació del laboratori i acreditacions */
+        .lab-status-verified {
+            color: #28a745; /* Verd */
+            font-weight: bold;
+        }
+        .lab-status-unverified {
+            color: #dc3545; /* Roig */
+            font-weight: bold;
+        }
+        .accreditation-valid {
+            color: #28a745; /* Verd */
+            font-weight: bold;
+        }
+        .accreditation-invalid {
+            color: #dc3545; /* Roig */
+            font-weight: bold;
+        }
+
+        .invalidate-button:disabled {
+            background-color: #6c757d; 
+            cursor: not-allowed;
+        }
+        #signatureDisplay, #signerAddressForSign {
+            word-break: break-all; /* Perquè les adreces llargues no trenquen el disseny */
+        }
+    </style>
+</head>
+<body class="mode-solitary">
+    <div class="mode-toggle-container">
+        <span class="mode-label">Mode Solitari</span>
+        <label class="switch">
+            <input type="checkbox" id="modeToggle" onchange="toggleMode()">
+            <span class="slider round"></span>
+        </label>
+        <span class="mode-label">Mode API</span>
+    </div>
+
+    <div class="container">
+        <h1>Verificar, Eliminar i Firmar Documents</h1>
+
+        <div class="input-group">
+            <label for="documentSignerContractAddress">Adreça del Contracte DocumentSigner:</label>
+            <input type="text" id="documentSignerContractAddress" value="0xc4CE88Db5D099CD68C5cb2554c2A54f4a90a111c">
+            <small>¡Assegura't que esta adreça siga la del teu contracte desplegat!</small>
+        </div>
+
+        <div class="input-group">
+            <label for="accreditationRegistryContractAddress">Adreça del Contracte AccreditationRegistry:</label>
+            <input type="text" id="accreditationRegistryContractAddress" value="0x3470234ABA5e37dac6d84Bd6CC5B3f14e40414EE">
+            <small>¡Assegura't que esta adreça siga la del teu contracte desplegat!</small>
+        </div>
+
+        <div id="result">
+            Carregant Ethers.js i esperant les teues accions...
+        </div>
+
+        <h2 class="section-title">Firmar un Nou Document</h2>
+        <div class="input-group">
+            <label for="signDocumentFile">Pas 1: Selecciona un fitxer per a firmar i obtindre el seu hash (Keccak256):</label>
+            <input type="file" id="signDocumentFile" onchange="step1_selectFileAndHash()">
+            <input type="text" id="documentHashToSign" placeholder="Hash del document (0x...)" readonly>
+        </div>
+
+        <div class="input-group">
+            <label>Pas 2: Generar la signatura EIP-712 amb el teu compte de MetaMask:</label>
+            <p>Compte actual de MetaMask per a la signatura: <span id="signerAccountForEIP712">No connectada</span></p>
+            <button onclick="step2_generateEIP712Signature()" id="generateSignatureBtn" disabled>Generar Signatura EIP-712</button>
+            <textarea id="signatureDisplay" placeholder="La signatura EIP-712 apareixerà ací" readonly></textarea>
+            <input type="hidden" id="signerAddressForSign"> </div>
+
+        <div class="input-group">
+            <label>Pas 3: Enviar la transacció de signatura al contracte (pot ser amb un altre compte de MetaMask):</label>
+            <p>Compte actual de MetaMask per a enviar la transacció: <span id="txSenderAccount">No connectada</span></p>
+            <button onclick="step3_sendSignTransaction()" id="sendSignTxBtn" disabled>Enviar Transacció de Signatura</button>
+            <div class="signing-status" id="signingStatus"></div>
+        </div>
+
+        <h2 class="section-title">Verificar i Eliminar Firmes Existents</h2>
+        <div class="input-group">
+            <label for="documentFile">Selecciona un fitxer per a verificar/eliminar les seues firmes:</label>
+            <input type="file" id="documentFile">
+        </div>
+
+        <div class="input-group">
+            <button onclick="getAndDisplaySigners()">Obtindre Firmants</button>
+        </div>
+
+        <div id="signersList">
+            <h2>Firmants:</h2>
+            <ul class="signer-list" id="signersUl">
+                </ul>
+        </div>
+    </div>
+
+    <script>
+        // ABI del contracte DocumentSigner
+        const DOCUMENT_SIGNER_ABI = [
+            {
+                "inputs": [
+                    {
+                        "internalType": "address",
+                        "name": "initialOwner",
+                        "type": "address"
+                    }
+                ],
+                "stateMutability": "nonpayable",
+                "type": "constructor"
+            },
+            {
+                "anonymous": false,
+                "inputs": [
+                    {
+                        "indexed": false,
+                        "internalType": "bytes32",
+                        "name": "documentHash",
+                        "type": "bytes32"
+                    },
+                    {
+                        "indexed": false,
+                        "internalType": "address",
+                        "name": "signer",
+                        "type": "address"
+                    },
+                    {
+                        "indexed": false,
+                        "internalType": "uint256",
+                        "name": "timestamp",
+                        "type": "uint256"
+                    },
+                    {
+                        "indexed": false,
+                        "internalType": "bytes",
+                        "name": "signature",
+                        "type": "bytes"
+                    }
+                ],
+                "name": "DocumentSigned",
+                "type": "event"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "bytes32",
+                        "name": "documentHash",
+                        "type": "bytes32"
+                    },
+                    {
+                        "internalType": "address",
+                        "name": "signer",
+                        "type": "address"
+                    },
+                    {
+                        "internalType": "bytes",
+                        "name": "signature",
+                        "type": "bytes"
+                    }
+                ],
+                "name": "invalidateSignature",
+                "outputs": [],
+                "stateMutability": "nonpayable",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "bytes32",
+                        "name": "documentHash",
+                        "type": "bytes32"
+                    }
+                ],
+                "name": "invalidateAllSignatures",
+                "outputs": [],
+                "stateMutability": "nonpayable",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "bytes32",
+                        "name": "",
+                        "type": "bytes32"
+                    },
+                    {
+                        "internalType": "address",
+                        "name": "",
+                        "type": "address"
+                    }
+                ],
+                "name": "documentSignatures",
+                "outputs": [
+                    {
+                        "internalType": "address",
+                        "name": "signer",
+                        "type": "address"
+                    },
+                    {
+                        "internalType": "uint256",
+                        "name": "timestamp",
+                        "type": "uint256"
+                    },
+                    {
+                        "internalType": "bytes",
+                        "name": "signature",
+                        "type": "bytes"
+                    },
+                    {
+                        "internalType": "uint32",
+                        "name": "nonce",
+                        "type": "uint32"
+                    },
+                    {
+                        "internalType": "address",
+                        "name": "sender",
+                        "type": "address"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "bytes32",
+                        "name": "documentHash",
+                        "type": "bytes32"
+                    }
+                ],
+                "name": "getSigners",
+                "outputs": [
+                    {
+                        "components": [
+                            {
+                                "internalType": "address",
+                                "name": "signer",
+                                "type": "address"
+                            },
+                            {
+                                "internalType": "uint256",
+                                "name": "timestamp",
+                                "type": "uint256"
+                            },
+                            {
+                                "internalType": "address",
+                                "name": "sender",
+                                "type": "address"
+                            }
+                        ],
+                        "internalType": "struct DocumentSigner.SignerInfo[]",
+                        "name": "",
+                        "type": "tuple[]"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "bytes32",
+                        "name": "documentHash",
+                        "type": "bytes32"
+                    },
+                    {
+                        "internalType": "address",
+                        "name": "signer",
+                        "type": "address"
+                    }
+                ],
+                "name": "isSignedBy",
+                "outputs": [
+                    {
+                        "internalType": "bool",
+                        "name": "",
+                        "type": "bool"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "address",
+                        "name": "",
+                        "type": "address"
+                    }
+                ],
+                "name": "nonce",
+                "outputs": [
+                    {
+                        "internalType": "uint32",
+                        "name": "",
+                        "type": "uint32"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [],
+                "name": "owner",
+                "outputs": [
+                    {
+                        "internalType": "address",
+                        "name": "",
+                        "type": "address"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [],
+                "name": "renounceOwnership",
+                "outputs": [],
+                "stateMutability": "nonpayable",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "bytes32",
+                        "name": "",
+                        "type": "bytes32"
+                    },
+                    {
+                        "internalType": "uint256",
+                        "name": "",
+                        "type": "uint256"
+                    }
+                ],
+                "name": "signersForDocument",
+                "outputs": [
+                    {
+                        "internalType": "address",
+                        "name": "signer",
+                        "type": "address"
+                    },
+                    {
+                        "internalType": "uint256",
+                        "name": "timestamp",
+                        "type": "uint256"
+                    },
+                    {
+                        "internalType": "address",
+                        "name": "sender",
+                        "type": "address"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "bytes32",
+                        "name": "documentHash",
+                        "type": "bytes32"
+                    },
+                    {
+                        "internalType": "address",
+                        "name": "signer",
+                        "type": "address"
+                    },
+                    {
+                        "internalType": "bytes",
+                        "name": "signature",
+                        "type": "bytes"
+                    }
+                ],
+                "name": "signDocument",
+                "outputs": [],
+                "stateMutability": "nonpayable",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "address",
+                        "name": "newOwner",
+                        "type": "address"
+                    }
+                ],
+                "name": "transferOwnership",
+                "outputs": [],
+                "stateMutability": "nonpayable",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "bytes32",
+                        "name": "documentHash",
+                        "type": "bytes32"
+                    },
+                    {
+                        "internalType": "address",
+                        "name": "expectedSigner",
+                        "type": "address"
+                    },
+                    {
+                        "internalType": "bytes",
+                        "name": "signature",
+                        "type": "bytes"
+                    }
+                ],
+                "name": "verifySignature",
+                "outputs": [
+                    {
+                        "internalType": "bool",
+                        "name": "",
+                        "type": "bool"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "bytes32",
+                        "name": "documentHash",
+                        "type": "bytes32"
+                    },
+                    {
+                        "internalType": "address",
+                        "name": "expectedSigner",
+                        "type": "address"
+                    }
+                ],
+                "name": "verifyStoredSignature",
+                "outputs": [
+                    {
+                        "internalType": "bool",
+                        "name": "",
+                        "type": "bool"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [],
+                "name": "DOMAIN_SEPARATOR",
+                "outputs": [
+                    {
+                        "internalType": "bytes32",
+                        "name": "",
+                        "type": "bytes32"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            }
+        ];
+
+        // ABI del contracte AccreditationRegistry
+        const ACCREDITATION_REGISTRY_ABI = [
+            {
+                "inputs": [
+                    {
+                        "internalType": "address",
+                        "name": "initialOwner",
+                        "type": "address"
+                    }
+                ],
+                "stateMutability": "nonpayable",
+                "type": "constructor"
+            },
+            {
+                "anonymous": false,
+                "inputs": [
+                    {
+                        "indexed": false,
+                        "internalType": "bytes32",
+                        "name": "accreditationHash",
+                        "type": "bytes32"
+                    },
+                    {
+                        "indexed": true,
+                        "internalType": "address",
+                        "name": "laboratoryAddress",
+                        "type": "address"
+                    },
+                    {
+                        "indexed": false,
+                        "internalType": "string",
+                        "name": "accreditationName",
+                        "type": "string"
+                    }
+                ],
+                "name": "AccreditationAdded",
+                "type": "event"
+            },
+            {
+                "anonymous": false,
+                "inputs": [
+                    {
+                        "indexed": false,
+                        "internalType": "bytes32",
+                        "name": "accreditationHash",
+                        "type": "bytes32"
+                    },
+                    {
+                        "indexed": true,
+                        "internalType": "address",
+                        "name": "laboratoryAddress",
+                        "type": "address"
+                    }
+                ],
+                "name": "AccreditationRevoked",
+                "type": "event"
+            },
+            {
+                "anonymous": false,
+                "inputs": [
+                    {
+                        "indexed": false,
+                        "internalType": "bytes32",
+                        "name": "accreditationHash",
+                        "type": "bytes32"
+                    },
+                    {
+                        "indexed": true,
+                        "internalType": "address",
+                        "name": "laboratoryAddress",
+                        "type": "address"
+                    },
+                    {
+                        "indexed": false,
+                        "internalType": "string",
+                        "name": "accreditationName",
+                        "type": "string"
+                    }
+                ],
+                "name": "AccreditationUpdated",
+                "type": "event"
+            },
+            {
+                "anonymous": false,
+                "inputs": [
+                    {
+                        "indexed": true,
+                        "internalType": "address",
+                        "name": "auditorAddress",
+                        "type": "address"
+                    }
+                ],
+                "name": "AuditorAdded",
+                "type": "event"
+            },
+            {
+                "anonymous": false,
+                "inputs": [
+                    {
+                        "indexed": true,
+                        "internalType": "address",
+                        "name": "auditorAddress",
+                        "type": "address"
+                    }
+                ],
+                "name": "AuditorRemoved",
+                "type": "event"
+            },
+            {
+                "anonymous": false,
+                "inputs": [
+                    {
+                        "indexed": true,
+                        "internalType": "address",
+                        "name": "laboratoryAddress",
+                        "type": "address"
+                    },
+                    {
+                        "indexed": false,
+                        "internalType": "string",
+                        "name": "name",
+                        "type": "string"
+                    }
+                ],
+                "name": "LaboratoryAdded",
+                "type": "event"
+            },
+            {
+                "anonymous": false,
+                "inputs": [
+                    {
+                        "indexed": true,
+                        "internalType": "address",
+                        "name": "laboratoryAddress",
+                        "type": "address"
+                    },
+                    {
+                        "indexed": false,
+                        "internalType": "bool",
+                        "name": "isVerified",
+                        "type": "bool"
+                    }
+                ],
+                "name": "LaboratoryVerified",
+                "type": "event"
+            },
+            {
+                "anonymous": false,
+                "inputs": [
+                    {
+                        "indexed": true,
+                        "internalType": "address",
+                        "name": "previousOwner",
+                        "type": "address"
+                    },
+                    {
+                        "indexed": true,
+                        "internalType": "address",
+                        "name": "newOwner",
+                        "type": "address"
+                    }
+                ],
+                "name": "OwnershipTransferred",
+                "type": "event"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "address",
+                        "name": "_laboratoryAddress",
+                        "type": "address"
+                    },
+                    {
+                        "internalType": "string",
+                        "name": "_accreditationName",
+                        "type": "string"
+                    },
+                    {
+                        "internalType": "uint256",
+                        "name": "_validFrom",
+                        "type": "uint256"
+                    },
+                    {
+                        "internalType": "uint256",
+                        "name": "_validUntil",
+                        "type": "uint256"
+                    }
+                ],
+                "name": "addOrUpdateAccreditation",
+                "outputs": [],
+                "stateMutability": "nonpayable",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "address",
+                        "name": "_auditorAddress",
+                        "type": "address"
+                    }
+                ],
+                "name": "addAuditor",
+                "outputs": [],
+                "stateMutability": "nonpayable",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "address",
+                        "name": "_laboratoryAddress",
+                        "type": "address"
+                    },
+                    {
+                        "internalType": "string",
+                        "name": "_name",
+                        "type": "string"
+                    }
+                ],
+                "name": "addLaboratory",
+                "outputs": [],
+                "stateMutability": "nonpayable",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "address",
+                        "name": "_laboratoryAddress",
+                        "type": "address"
+                    }
+                ],
+                "name": "getAllAccreditationsForLaboratory",
+                "outputs": [
+                    {
+                        "components": [
+                            {
+                                "internalType": "string",
+                                "name": "name",
+                                "type": "string"
+                            },
+                            {
+                                "internalType": "uint256",
+                                "name": "validFrom",
+                                "type": "uint256"
+                            },
+                            {
+                                "internalType": "uint256",
+                                "name": "validUntil",
+                                "type": "uint256"
+                            }
+                        ],
+                        "internalType": "struct AccreditationRegistry.Accreditation[]",
+                        "name": "",
+                        "type": "tuple[]"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "address",
+                        "name": "_laboratoryAddress",
+                        "type": "address"
+                    },
+                    {
+                        "internalType": "string",
+                        "name": "_accreditationName",
+                        "type": "string"
+                    }
+                ],
+                "name": "getAccreditationDetails",
+                "outputs": [
+                    {
+                        "internalType": "string",
+                        "name": "name",
+                        "type": "string"
+                    },
+                    {
+                        "internalType": "uint256",
+                        "name": "validFrom",
+                        "type": "uint256"
+                    },
+                    {
+                        "internalType": "uint256",
+                        "name": "validUntil",
+                        "type": "uint256"
+                    },
+                    {
+                        "internalType": "bool",
+                        "name": "exists",
+                        "type": "bool"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "address",
+                        "name": "_laboratoryAddress",
+                        "type": "address"
+                    },
+                    {
+                        "internalType": "string",
+                        "name": "_accreditationName",
+                        "type": "string"
+                    }
+                ],
+                "name": "hasValidAccreditation",
+                "outputs": [
+                    {
+                        "internalType": "bool",
+                        "name": "",
+                        "type": "bool"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "address",
+                        "name": "_laboratoryAddress",
+                        "type": "address"
+                    }
+                ],
+                "name": "getLaboratoryInfo",
+                "outputs": [
+                    {
+                        "internalType": "string",
+                        "name": "name",
+                        "type": "string"
+                    },
+                    {
+                        "internalType": "bool",
+                        "name": "isVerified",
+                        "type": "bool"
+                    },
+                    {
+                        "internalType": "bool",
+                        "name": "exists",
+                        "type": "bool"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "address",
+                        "name": "",
+                        "type": "address"
+                    }
+                ],
+                "name": "isAuditor",
+                "outputs": [
+                    {
+                        "internalType": "bool",
+                        "name": "",
+                        "type": "bool"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "address",
+                        "name": "",
+                        "type": "address"
+                    }
+                ],
+                "name": "laboratories",
+                "outputs": [
+                    {
+                        "internalType": "string",
+                        "name": "name",
+                        "type": "string"
+                    },
+                    {
+                        "internalType": "bool",
+                        "name": "isVerified",
+                        "type": "bool"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [],
+                "name": "owner",
+                "outputs": [
+                    {
+                        "internalType": "address",
+                        "name": "",
+                        "type": "address"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "address",
+                        "name": "_auditorAddress",
+                        "type": "address"
+                    }
+                ],
+                "name": "removeAuditor",
+                "outputs": [],
+                "stateMutability": "nonpayable",
+                "type": "function"
+            },
+            {
+                "inputs": [],
+                "name": "renounceOwnership",
+                "outputs": [],
+                "stateMutability": "nonpayable",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "address",
+                        "name": "_laboratoryAddress",
+                        "type": "address"
+                    },
+                    {
+                        "internalType": "string",
+                        "name": "_accreditationName",
+                        "type": "string"
+                    }
+                ],
+                "name": "revokeAccreditation",
+                "outputs": [],
+                "stateMutability": "nonpayable",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "address",
+                        "name": "_laboratoryAddress",
+                        "type": "address"
+                    },
+                    {
+                        "internalType": "bool",
+                        "name": "_status",
+                        "type": "bool"
+                    }
+                ],
+                "name": "setLaboratoryVerificationStatus",
+                "outputs": [],
+                "stateMutability": "nonpayable",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "address",
+                        "name": "newOwner",
+                        "type": "address"
+                    }
+                ],
+                "name": "transferOwnership",
+                "outputs": [],
+                "stateMutability": "nonpayable",
+                "type": "function"
+            }
+        ];
+
+        let provider;
+        let signer; 
+        let documentSignerContract;
+        let accreditationRegistryContract; 
+        let currentDocumentHash = ''; 
+        let connectedAccount = null; 
+        let currentMode = 'solitary'; // 'solitary' o 'api'
+
+        // Variables d'estat per a la signatura en 3 passos
+        let signingDocHash = ''; 
+        let generatedSignature = ''; 
+        let signerAddressEIP712 = ''; 
+        let nonceForEIP712Signature = 0; 
+
+
+        const resultDiv = document.getElementById('result');
+        const signersUl = document.getElementById('signersUl');
+        const documentSignerContractAddressInput = document.getElementById('documentSignerContractAddress');
+        const accreditationRegistryContractAddressInput = document.getElementById('accreditationRegistryContractAddress'); 
+
+        // Elements de la nova secció de signatura
+        const signDocumentFileInput = document.getElementById('signDocumentFile');
+        const documentHashToSignInput = document.getElementById('documentHashToSign');
+        const signerAccountForEIP712Span = document.getElementById('signerAccountForEIP712');
+        const generateSignatureBtn = document.getElementById('generateSignatureBtn');
+        const signatureDisplayTextArea = document.getElementById('signatureDisplay');
+        const signerAddressForSignInput = document.getElementById('signerAddressForSign');
+        const txSenderAccountSpan = document.getElementById('txSenderAccount');
+        const sendSignTxBtn = document.getElementById('sendSignTxBtn');
+        const signingStatusDiv = document.getElementById('signingStatus');
+
+        // Elements del toggle de mode
+        const modeToggleCheckbox = document.getElementById('modeToggle');
+
+
+        // Funció per a mostrar missatges en el resultat general
+        function showResult(message, isError = false) {
+            resultDiv.textContent = message;
+            resultDiv.className = isError ? 'error' : '';
+        }
+
+        // Funció per a mostrar missatges específics en la secció de signatura
+        function showSigningStatus(message, isError = false) {
+            signingStatusDiv.textContent = message;
+            signingStatusDiv.className = isError ? 'signing-status failure' : 'signing-status success';
+        }
+
+        // Funció per a mostrar missatges específics de l'info del laboratori
+        function showLabInfoStatus(targetElement, message, isError = false) {
+            let statusDiv = targetElement.nextElementSibling; // Intenta trobar un div d'estat ja existent
+            if (!statusDiv || !statusDiv.classList.contains('lab-info-status')) {
+                statusDiv = document.createElement('div');
+                statusDiv.className = 'lab-info-status';
+                targetElement.parentNode.insertBefore(statusDiv, targetElement.nextSibling);
+            }
+
+            statusDiv.innerHTML = message;
+            statusDiv.classList.toggle('failure', isError);
+            statusDiv.classList.toggle('success', !isError && message !== '');
+            statusDiv.classList.toggle('info', !isError && message !== ''); 
+        }
+
+        // Funció per a canviar el mode (Solitari / API)
+        function toggleMode() {
+            if (modeToggleCheckbox.checked) {
+                currentMode = 'api';
+                document.body.classList.remove('mode-solitary');
+                document.body.classList.add('mode-api');
+                showResult('Mode API activat. Les transaccions s\'enviaran a http://127.0.0.1.', false);
+            } else {
+                currentMode = 'solitary';
+                document.body.classList.remove('mode-api');
+                document.body.classList.add('mode-solitary');
+                showResult('Mode Solitari activat. Les transaccions s\'enviaran via MetaMask.', false);
+            }
+            // Opcional: Re-renderitzar la llista de firmants per assegurar-se que els botons d'invalidació estiguin actualitzats visualment si fos necessari
+            if (currentDocumentHash && documentSignerContract) {
+                updateInvalidateButtonsState();
+            }
+        }
+
+
+        // Inicialitzar Ethers.js i el mode
+        window.addEventListener('load', async () => {
+            // Inicialitzar el mode per defecte (solitari)
+            toggleMode(); 
+
+            if (typeof window.ethereum !== 'undefined') {
+                provider = new ethers.providers.Web3Provider(window.ethereum);
+                try {
+                    const accounts = await provider.send("eth_requestAccounts", []);
+                    connectedAccount = accounts[0]; 
+                    signer = provider.getSigner(connectedAccount); 
+                    showResult(`Ethers.js inicialitzat i connectat a MetaMask. Compte: ${connectedAccount}`);
+                    txSenderAccountSpan.textContent = connectedAccount;
+                    signerAccountForEIP712Span.textContent = connectedAccount;
+
+                    // Habilitar el botó de generar signatura si ja hi ha un fitxer seleccionat
+                    if (signDocumentFileInput.files.length > 0) {
+                        generateSignatureBtn.disabled = false;
+                    }
+
+                    // Escoltar canvis de compte
+                    window.ethereum.on('accountsChanged', (accounts) => {
+                        console.log("ACC", accounts);
+                        connectedAccount = accounts[0];
+                        signer = provider.getSigner(connectedAccount);
+                        showResult(`Compte de MetaMask canviat a: ${connectedAccount}`);
+                        txSenderAccountSpan.textContent = connectedAccount;
+                        signerAccountForEIP712Span.textContent = connectedAccount; 
+
+                        if (currentDocumentHash && documentSignerContract) { 
+                            updateInvalidateButtonsState(); 
+                        }
+                    });
+
+                } catch (error) {
+                    showResult('Accés a MetaMask denegat. Algunes funcionalitats poden no estar disponibles.', true);
+                    console.error("User denied account access", error);
+                }
+            } else {
+                showResult('No es detecta Ethereum en el navegador. Per favor, instal·la MetaMask o un altre proveïdor de Web3.', true);
+                console.error("No Ethereum provider detected.");
+            }
+        });
+
+        // Funció per a calcular el hash Keccak256 d'un fitxer
+        async function calculateFileHash(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = async (event) => {
+                    try {
+                        const buffer = event.target.result; // ArrayBuffer
+                        const uint8Array = new Uint8Array(buffer); // Convertir a Uint8Array
+                        
+                        const hashHex = ethers.utils.keccak256(uint8Array); 
+                        resolve(hashHex);
+                    } catch (error) {
+                        reject('Error en calcular el hash Keccak256: ' + error.message);
+                    }
+                };
+                reader.onerror = (error) => {
+                    reject('Error en llegir el fitxer: ' + error.message);
+                };
+                reader.readAsArrayBuffer(file);
+            });
+        }
+
+        // --- FUNCIONS PER A LA SECCIÓ DE SIGNATURA DE DOCUMENTS (3 passos) ---
+
+        // Pas 1: Seleccionar fitxer i mostrar hash
+        async function step1_selectFileAndHash() {
+            const file = signDocumentFileInput.files[0];
+            if (!file) {
+                documentHashToSignInput.value = '';
+                generateSignatureBtn.disabled = true;
+                return;
+            }
+
+            showSigningStatus('Calculant hash Keccak256 del document...', false);
+            try {
+                signingDocHash = await calculateFileHash(file);
+                documentHashToSignInput.value = signingDocHash;
+                showSigningStatus(`Hash del document calculat: ${signingDocHash}`, false);
+                generateSignatureBtn.disabled = false; // Habilitar Pas 2
+                signatureDisplayTextArea.value = ''; // Netejar signatura anterior
+                generatedSignature = '';
+                sendSignTxBtn.disabled = true; // Deshabilitar Pas 3
+            } catch (error) {
+                showSigningStatus(`Error en calcular el hash: ${error.message}`, true);
+                documentHashToSignInput.value = '';
+                generateSignatureBtn.disabled = true;
+            }
+        }
+
+        // Pas 2: Generar la signatura EIP-712
+        async function step2_generateEIP712Signature() {
+            if (!signer || !connectedAccount) {
+                showSigningStatus('Connecta el teu MetaMask primer.', true);
+                return;
+            }
+            if (!signingDocHash) {
+                showSigningStatus('Primer selecciona un document i calcula el seu hash (Pas 1).', true);
+                return;
+            }
+            const contractAddress = documentSignerContractAddressInput.value.trim(); // Usar la dirección correcta
+            if (!ethers.utils.isAddress(contractAddress)) {
+                showSigningStatus('L\'adreça del contracte DocumentSigner no és vàlida.', true);
+                return;
+            }
+
+            showSigningStatus('Obtenint nonce i preparant la signatura EIP-712...', false);
+            try {
+                // Instanciar el contracte DocumentSigner per a lectura de dades (nonce)
+                documentSignerContract = new ethers.Contract(contractAddress, DOCUMENT_SIGNER_ABI, provider);
+                
+                // Obtindre el nonce actual del compte que va a firmar (connectedAccount)
+                const nonceForEIP712Signature = await documentSignerContract.nonce(connectedAccount);
+
+                // Guardar l'adreça que va a firmar per al pas 3
+                signerAddressEIP712 = connectedAccount;
+
+                const domain = {
+                    name: 'DocumentSigner',
+                    version: '1.0.0',
+                    chainId: (await provider.getNetwork()).chainId,
+                    verifyingContract: contractAddress,
+                };
+
+                const types = {
+                    Document: [
+                        { name: 'contentHash', type: 'bytes32' },
+                        { name: 'nonce', type: 'uint32' }
+                    ],
+                };
+
+                const message = {
+                    contentHash: signingDocHash,
+                    nonce: nonceForEIP712Signature,
+                };
+
+                // Demanar a MetaMask que firme les dades EIP-712
+                generatedSignature = await signer._signTypedData(domain, types, message);
+                signatureDisplayTextArea.value = generatedSignature;
+                signerAddressForSignInput.value = signerAddressEIP712; // Guardar per al pas 3
+
+                showSigningStatus(`Signatura EIP-712 generada amb èxit per ${signerAddressEIP712}.`, false);
+                sendSignTxBtn.disabled = false; // Habilitar Pas 3
+
+            } catch (error) {
+                console.error("Error en generar la signatura EIP-712:", error);
+                showSigningStatus(`Error en generar la signatura EIP-712: ${error.message || 'Desconegut'}. ${error.code === 4001 ? 'Transacció rebutjada per l\'usuari.' : ''}`, true);
+                generatedSignature = '';
+                signatureDisplayTextArea.value = '';
+                signerAddressForSignInput.value = '';
+                sendSignTxBtn.disabled = true;
+            }
+        }
+
+        // Pas 3: Enviar la transacció de signatura al contracte
+        async function step3_sendSignTransaction() {
+            if (!generatedSignature || !signerAddressEIP712 || !signingDocHash) {
+                showSigningStatus('Primer completa els passos 1 i 2.', true);
+                return;
+            }
+            // No es pot enviar una transacció sense un compte connectat a MetaMask.
+            // Si el mode és API, el `signer` no s'utilitza directament per a la transacció,
+            // però `connectedAccount` segueix sent rellevant per a la UI.
+            if (!connectedAccount) {
+                showSigningStatus('Connecta el teu MetaMask per a enviar la transacció.', true);
+                return;
+            }
+            const contractAddress = documentSignerContractAddressInput.value.trim();
+            if (!ethers.utils.isAddress(contractAddress)) {
+                showSigningStatus('L\'adreça del contracte DocumentSigner no és vàlida.', true);
+                return;
+            }
+            
+            showSigningStatus(`Enviant transacció de signatura des de ${connectedAccount}...`, false);
+            sendSignTxBtn.disabled = true;
+
+            try {
+                if (currentMode === 'solitary') {
+                    console.log("ADDR2", signerAddressEIP712);
+                    // Mode Solitari: Transacció via MetaMask
+                    const contractWithTxSigner = new ethers.Contract(contractAddress, DOCUMENT_SIGNER_ABI, signer);
+                    const tx = await contractWithTxSigner.signDocument(
+                        signingDocHash,
+                        signerAddressEIP712, 
+                        generatedSignature
+                    );
+                    showSigningStatus('Transacció de signatura enviada. Esperant confirmació...', false);
+                    await tx.wait(); 
+                    showSigningStatus('¡Document firmat amb èxit en la blockchain!', false);
+
+                } else { // currentMode === 'api'
+                    console.log("ADDR", signerAddressEIP712);
+                    // Mode API: Transacció via API REST
+                    const apiEndpoint = 'http://127.0.0.1:8888/sign_document_contract';
+                    const payload = {
+                        document_hash: signingDocHash,
+                        signer_address: ethers.utils.getAddress(signerAddressEIP712),
+                        signature: generatedSignature
+                    };
+                    
+                    
+                    
+                    showSigningStatus(`Enviant dades a l'API REST: ${apiEndpoint}...`, false);
+                    const response = await fetch(apiEndpoint, {
+                        method: 'POST',
+                        headers: {
+                                'Content-type':'application/json', 
+                                'Accept':'application/json'
+                        },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+                    }
+
+                    const responseData = await response.json();
+                    showSigningStatus(`Resposta de l'API: ${JSON.stringify(responseData)}`, false);
+                    showSigningStatus('¡Document firmat amb èxit a través de l\'API!', false);
+                }
+
+                // Netejar camps i deshabilitar botons per a una nova signatura
+                signDocumentFileInput.value = '';
+                documentHashToSignInput.value = '';
+                signatureDisplayTextArea.value = '';
+                signerAddressForSignInput.value = '';
+                generatedSignature = '';
+                signingDocHash = '';
+                signerAddressEIP712 = '';
+                nonceForEIP712Signature = 0;
+                generateSignatureBtn.disabled = true;
+                sendSignTxBtn.disabled = true;
+
+                // Opcional: Recarregar la llista de firmants en la secció de verificació
+                setTimeout(() => getAndDisplaySigners(), 2000); 
+
+            } catch (error) {
+                console.error("Error en enviar la transacció de signatura:", error);
+                let errorMessage = error.message || 'Desconegut';
+                if (error.code === 4001) { 
+                    errorMessage = "Transacció rebutjada per l'usuari en MetaMask.";
+                } else if (error.data && error.data.message) {
+                    errorMessage = error.data.message; 
+                } else if (error.reason) {
+                    errorMessage = error.reason; 
+                }
+                showSigningStatus(`Error en enviar la transacció: ${errorMessage}`, true);
+                sendSignTxBtn.disabled = false; 
+            }
+        }
+
+
+        // --- FUNCIONS PER A LA SECCIÓ DE VERIFICACIÓ/ELIMINACIÓ ---
+
+        // Funció per a obtindre i mostrar els firmants
+        async function getAndDisplaySigners() {
+            if (!provider) {
+                showResult('Ethers.js no està inicialitzat. Per favor, recarrega la pàgina i intenta de nou.', true);
+                return;
+            }
+
+            const fileInput = document.getElementById('documentFile');
+            const contractAddress = documentSignerContractAddressInput.value.trim(); // Usar la dirección correcta
+
+            if (!fileInput.files.length) {
+                showResult('Per favor, selecciona un fitxer.', true);
+                return;
+            }
+            if (!ethers.utils.isAddress(contractAddress)) { 
+                showResult('L\'adreça del contracte DocumentSigner no és vàlida.', true);
+                return;
+            }
+
+            showResult('Calculant hash Keccak256 del document...');
+            const file = fileInput.files[0];
+            
+            try {
+                currentDocumentHash = await calculateFileHash(file); 
+                showResult(`Hash del document calculat (Keccak256): ${currentDocumentHash}. Obtenint firmants...`);
+
+                // Instanciar el contracte DocumentSigner per a lectura de dades (getSigners)
+                documentSignerContract = new ethers.Contract(contractAddress, DOCUMENT_SIGNER_ABI, provider);
+
+                const signers = await documentSignerContract.getSigners(currentDocumentHash);
+
+                displaySigners(signers); 
+
+                showResult(`S'han obtingut ${signers.length} firmants per al document.`);
+
+            } catch (error) {
+                console.error("Error en obtindre firmants:", error);
+                showResult(`Error en obtindre firmants: ${error.message || error}. Assegura't que el contracte estiga desplegat i accessible, i el hash del document siga correcte.`, true);
+                signersUl.innerHTML = ''; 
+            }
+        }
+
+        // Funció per a verificar una signatura individual
+        async function verifyStoredSignerSignature(signerAddress, buttonElement) {
+            if (!documentSignerContract || !currentDocumentHash) {
+                showResult('Primer, obtén els firmants d\'un document.', true);
+                return;
+            }
+
+            const initialButtonText = buttonElement.textContent;
+            buttonElement.textContent = 'Verificant...';
+            buttonElement.disabled = true;
+
+            // Eliminem l'anterior missatge d'estat si n'hi haguera
+            const existingStatus = buttonElement.parentNode.querySelector('.verification-status');
+            if (existingStatus) {
+                existingStatus.remove();
+            }
+
+            try {
+                const isValid = await documentSignerContract.verifyStoredSignature(currentDocumentHash, signerAddress);
+
+                if (isValid) {
+                    buttonElement.textContent = 'Vàlida'; // Canviem el text del botó
+                    buttonElement.classList.remove('verify-button'); // Eliminem classe base
+                    buttonElement.classList.add('verify-button', 'valid'); // Afegim classes per a el color verd
+                } else {
+                    // Si no és vàlida, mantenim el botó amb la seua aparença original
+                    // i mostrem l'error en un div separat com abans.
+                    const verificationStatusDiv = document.createElement('div');
+                    verificationStatusDiv.className = 'verification-status failure';
+                    verificationStatusDiv.textContent = 'Signatura Invàlida.';
+                    buttonElement.parentNode.appendChild(verificationStatusDiv);
+                }
+            } catch (error) {
+                console.error("Error en verificar la signatura:", error);
+                const verificationStatusDiv = document.createElement('div');
+                verificationStatusDiv.className = 'verification-status failure';
+                verificationStatusDiv.textContent = `Error: ${error.message || 'Desconegut'}`;
+                buttonElement.parentNode.appendChild(verificationStatusDiv);
+            } finally {
+                buttonElement.disabled = false; // Sempre re-habilitem el botó
+            }
+        }
+
+        // Funció per a invalidar una signatura
+        async function invalidateSignerSignature(signerAddress, buttonElement) {
+            if (!documentSignerContract || !currentDocumentHash || !signer || !connectedAccount) {
+                showResult('Assegura\'t que Ethers.js estiga connectat i s\'haja carregat un document.', true);
+                return;
+            }
+
+            if (signerAddress.toLowerCase() !== connectedAccount.toLowerCase()) {
+                showResult('No pots invalidar una signatura que no et pertany.', true);
+                return;
+            }
+
+            const initialButtonText = buttonElement.textContent;
+            buttonElement.textContent = 'Invalidant...';
+            buttonElement.disabled = true;
+
+            const invalidationStatusDiv = document.createElement('div');
+            invalidationStatusDiv.className = 'invalidation-status';
+
+            try {
+                const currentNonce = await documentSignerContract.nonce(signerAddress);
+
+                showResult(`Obtingut nonce ${currentNonce} per a ${signerAddress}. Preparant signatura EIP-712 per a invalidació...`);
+
+                const domain = {
+                    name: 'DocumentSigner',
+                    version: '1.0.0',
+                    chainId: (await provider.getNetwork()).chainId,
+                    verifyingContract: documentSignerContract.address,
+                };
+
+                const types = {
+                    Document: [
+                        { name: 'contentHash', type: 'bytes32' },
+                        { name: 'nonce', type: 'uint32' }
+                    ],
+                };
+
+                const message = {
+                    contentHash: currentDocumentHash,
+                    nonce: currentNonce, 
+                };
+
+                const signature = await signer._signTypedData(domain, types, message);
+
+                if (currentMode === 'solitary') {
+                    // Mode Solitari: Transacció via MetaMask
+                    showResult(`Signatura EIP-712 generada. Enviant transacció d'invalidació via MetaMask...`);
+                    const contractWithSigner = documentSignerContract.connect(signer);
+                    const tx = await contractWithSigner.invalidateSignature(
+                        currentDocumentHash,
+                        signerAddress,
+                        signature
+                    );
+                    showResult('Transacció d\'invalidació enviada. Esperant confirmació...', false);
+                    await tx.wait();
+                    invalidationStatusDiv.classList.add('success');
+                    invalidationStatusDiv.textContent = '¡Signatura invalidada amb èxit!';
+                } else { // currentMode === 'api'
+                    // Mode API: Transacció via API REST
+                    const apiEndpoint = 'http://127.0.0.1:8888/invalidate_signature_contract';
+                    const payload = {
+                        document_hash: currentDocumentHash,
+                        signer_address: signerAddress,
+                        signature: signature
+                    };
+
+                    showResult(`Signatura EIP-712 generada. Enviant dades a l'API REST: ${apiEndpoint}...`, false);
+                    const response = await fetch(apiEndpoint, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+                    }
+
+                    const responseData = await response.json();
+                    invalidationStatusDiv.classList.add('success');
+                    invalidationStatusDiv.textContent = `¡Signatura invalidada amb èxit via API! Resposta: ${JSON.stringify(responseData)}`;
+                }
+                
+                showResult('Signatura invalidada. Recarregant la llista de firmants...', false);
+                setTimeout(() => getAndDisplaySigners(), 2000); 
+
+            } catch (error) {
+                console.error("Error en invalidar la signatura:", error);
+                invalidationStatusDiv.classList.add('failure');
+                let errorMessage = error.message || 'Desconegut';
+                if (error.code === 4001) { 
+                    errorMessage = "Transacció rebutjada per l'usuari en MetaMask.";
+                } else if (error.data && error.data.message) {
+                    errorMessage = error.data.message; 
+                } else if (error.reason) {
+                    errorMessage = error.reason; 
+                }
+                invalidationStatusDiv.textContent = `Error: ${errorMessage}`;
+                showResult(`Error en invalidar signatura: ${errorMessage}`, true);
+
+            } finally {
+                buttonElement.textContent = initialButtonText;
+                buttonElement.disabled = false;
+                const existingStatus = buttonElement.parentNode.querySelector('.invalidation-status');
+                if (existingStatus) {
+                    existingStatus.remove();
+                }
+                buttonElement.parentNode.appendChild(invalidationStatusDiv);
+            }
+        }
+
+        // Funció per a mostrar la informació del laboratori
+        async function showLaboratoryInfo(laboratoryAddress, buttonElement) {
+            const registryAddress = accreditationRegistryContractAddressInput.value.trim();
+            if (!ethers.utils.isAddress(registryAddress)) {
+                showLabInfoStatus(buttonElement, 'L\'adreça del contracte AccreditationRegistry no és vàlida.', true);
+                return;
+            }
+
+            if (!provider) {
+                showLabInfoStatus(buttonElement, 'Ethers.js no està inicialitzat.', true);
+                return;
+            }
+
+            const initialButtonText = buttonElement.textContent;
+            buttonElement.textContent = 'Carregant info...';
+            buttonElement.disabled = true;
+
+            // Eliminar cualquier estado anterior de info del laboratorio
+            const existingLabInfoStatus = buttonElement.parentNode.querySelector('.lab-info-status');
+            if (existingLabInfoStatus) {
+                existingLabInfoStatus.remove();
+            }
+
+            try {
+                accreditationRegistryContract = new ethers.Contract(registryAddress, ACCREDITATION_REGISTRY_ABI, provider);
+                const [labName, isVerified, labExists] = await accreditationRegistryContract.getLaboratoryInfo(laboratoryAddress);
+
+                let infoMessage = '';
+                if (labExists) {
+                    const verifiedClass = isVerified ? 'lab-status-verified' : 'lab-status-unverified';
+                    infoMessage += `Nom: ${labName}<br><span class="${verifiedClass}">Verificat: ${isVerified ? 'Sí' : 'No'}</span><br>`;
+                    
+                    // Obtener todas las acreditaciones del laboratorio
+                    const accreditations = await accreditationRegistryContract.getAllAccreditationsForLaboratory(laboratoryAddress);
+                    const currentTimestamp = Math.floor(Date.now() / 1000); // Timestamp actual en segundos
+
+                    if (accreditations.length > 0) {
+                        infoMessage += "<br>Acreditacions:<br>";
+                        accreditations.forEach(acc => {
+                            const validFromDate = new Date(parseInt(acc.validFrom.toString()) * 1000);
+                            const validUntilDate = new Date(parseInt(acc.validUntil.toString()) * 1000);
+                            
+                            // Comprobar la validez de la acreditación contra el timestamp actual
+                            const isValidAccreditation = (acc.validFrom <= currentTimestamp && acc.validUntil >= currentTimestamp);
+                            const accreditationClass = isValidAccreditation ? 'accreditation-valid' : 'accreditation-invalid';
+
+                            infoMessage += ` - <span class="${accreditationClass}">${acc.name} (De: ${validFromDate.toLocaleDateString()} A: ${validUntilDate.toLocaleDateString()})</span><br>`;
+                        });
+                        showLabInfoStatus(buttonElement, infoMessage, false);
+                    } else {
+                        infoMessage += "<br>Acreditacions: Cap acreditació trobada per a este laboratori.";
+                        showLabInfoStatus(buttonElement, infoMessage, false); // No es un error, solo falta de acreditaciones
+                    }
+                } else {
+                    infoMessage = `El laboratori ${laboratoryAddress} no existeix en el registre d'acreditacions.`;
+                    showLabInfoStatus(buttonElement, infoMessage, true);
+                }
+            } catch (error) {
+                console.error("Error en obtenir informació del laboratori o les seues acreditacions:", error);
+                showLabInfoStatus(buttonElement, `Error: ${error.message || 'Desconegut'}`, true);
+            } finally {
+                buttonElement.textContent = initialButtonText;
+                buttonElement.disabled = false;
+            }
+        }
+
+
+        // Funció per a actualitzar l'estat dels botons d'invalidació i netejar estats visuals
+        function updateInvalidateButtonsState() {
+            const signerItems = signersUl.children; 
+            for (let i = 0; i < signerItems.length; i++) {
+                const li = signerItems[i];
+                const signerAddressSpan = li.querySelector('span:first-of-type'); 
+                const signerAddressText = signerAddressSpan.textContent;
+                const currentSignerAddress = signerAddressText.split(': ')[1].trim(); 
+
+                const invalidateButton = li.querySelector('.invalidate-button');
+                const verifyButton = li.querySelector('.verify-button'); 
+                const labInfoButton = li.querySelector('.lab-info-button'); // Obtenim el botó d'info del laboratori
+
+                if (invalidateButton) { 
+                    if (connectedAccount && currentSignerAddress.toLowerCase() === connectedAccount.toLowerCase()) {
+                        invalidateButton.disabled = false;
+                        invalidateButton.title = ""; 
+                        invalidateButton.onclick = () => invalidateSignerSignature(currentSignerAddress, invalidateButton);
+                    } else {
+                        invalidateButton.disabled = true;
+                        invalidateButton.title = "Només el firmant pot invalidar la seua pròpia signatura.";
+                        invalidateButton.onclick = null; 
+                    }
+                }
+
+                // Reiniciar l'estat visual del botó de verificar
+                if (verifyButton) {
+                    verifyButton.textContent = 'Verificar Signatura Emmagatzemada'; 
+                    verifyButton.classList.remove('valid'); 
+                    const existingStatus = verifyButton.parentNode.querySelector('.verification-status');
+                    if (existingStatus) {
+                        existingStatus.remove();
+                    }
+                }
+
+                // Netejar missatges d'estat del laboratori si existien
+                const existingLabInfoStatus = li.querySelector('.lab-info-status');
+                if (existingLabInfoStatus) {
+                    existingLabInfoStatus.remove();
+                }
+            }
+        }
+
+
+        // Funció per a mostrar els firmants en la interfície (adaptada per al nou botó)
+        function displaySigners(signers) {
+            signersUl.innerHTML = ''; 
+
+            if (signers.length === 0) {
+                signersUl.innerHTML = '<li style="color: #666;">No hi ha firmants registrats per a este document.</li>';
+                return;
+            }
+
+            signers.forEach(signerInfo => {
+                const li = document.createElement('li');
+                li.className = 'signer-item';
+
+                const timestampDate = new Date(parseInt(signerInfo.timestamp.toString()) * 1000); 
+
+                li.innerHTML = `
+                    <span><strong>Firmant:</strong> ${signerInfo.signer}</span>
+                    <span><strong>Data de Signatura:</strong> ${timestampDate.toLocaleString()}</span>
+                    <span><strong>Adreça d'Enviament (msg.sender):</strong> ${signerInfo.sender}</span>
+                    <div class="action-buttons">
+                        <button class="verify-button">Verificar Signatura Emmagatzemada</button>
+                        <button class="invalidate-button">Invalidar Signatura</button>
+                        <button class="lab-info-button">Veure Info Laboratori</button>
+                    </div>
+                `;
+
+                const verifyButton = li.querySelector('.verify-button');
+                verifyButton.onclick = () => verifyStoredSignerSignature(signerInfo.signer, verifyButton);
+
+                const invalidateButton = li.querySelector('.invalidate-button');
+                if (connectedAccount && signerInfo.signer.toLowerCase() === connectedAccount.toLowerCase()) {
+                    invalidateButton.disabled = false;
+                    invalidateButton.onclick = () => invalidateSignerSignature(signerInfo.signer, invalidateButton);
+                    invalidateButton.title = ""; 
+                } else {
+                    invalidateButton.disabled = true; 
+                    invalidateButton.title = "Només el firmant pot invalidar la seua pròpia signatura.";
+                    invalidateButton.onclick = null; 
+                }
+
+                const labInfoButton = li.querySelector('.lab-info-button');
+                labInfoButton.onclick = () => showLaboratoryInfo(signerInfo.sender, labInfoButton);
+
+                signersUl.appendChild(li);
+            });
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,36 @@
+@startuml
+actor UsuariVerificador
+boundary InterficieUsuari
+control ServeiVerificacio
+entity Document
+control GestorBlockchain
+entity SignaturaBlockchain
+entity Laboratori
+
+UsuariVerificador -> InterficieUsuari: Selecciona Document
+InterficieUsuari -> ServeiVerificacio: Sol·licita Verificació()
+ServeiVerificacio -> Document: calcularHash()
+Document --> ServeiVerificacio: hashDocCalculat
+
+ServeiVerificacio -> GestorBlockchain: obtenirInformacioSignatura()
+GestorBlockchain -> Blockchain: Consulta Registre de Documents Signats
+Blockchain --> GestorBlockchain: InformacioSignatura()
+
+alt InformacioSignatura trobada
+  GestorBlockchain -> SignaturaBlockchain: crea(infoSig)
+  ServeiVerificacio -> GestorBlockchain: obtenirClauPublicaLaboratori()
+  GestorBlockchain -> Blockchain: Consulta Registre de Documents Signats
+  Blockchain --> GestorBlockchain: clauPublicaLaboratoriRecuperada
+  ServeiVerificacio -> Laboratori: obtenirClauPublica()
+  Laboratori --> ServeiVerificacio: clauPublica
+
+  ServeiVerificacio -> SignaturaBlockchain: verificar(hashDocumentCalculat, clauPublica)
+  SignaturaBlockchain --> ServeiVerificacio: esValida
+else InformacioSignatura no trobada
+  ServeiVerificacio --> InterficieUsuari: Signatura no trobada
+  InterficieUsuari -> UsuariVerificador: Mostra resultat (no trobat)
+end
+
+ServeiVerificacio --> InterficieUsuari: Resultat Verificació()
+InterficieUsuari -> UsuariVerificador: Mostra resultat (trobat)
+@enduml

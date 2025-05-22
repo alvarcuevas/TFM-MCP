@@ -1,0 +1,26 @@
+@startuml
+actor Laboratori
+boundary InterficieUsuari
+control ServeiAcreditacions
+entity Acreditacio
+control GestorBlockchain
+
+Laboratori -> InterficieUsuari: Selecciona "Afegir Acreditació"
+InterficieUsuari -> ServeiAcreditacions: Sol·licita Afegir Acreditacio()
+InterficieUsuari -> ServeiAcreditacions: Proporciona Detalls
+ServeiAcreditacions -> Acreditacio: crea(nom, descripcio, data, entitat, prova)
+ServeiAcreditacions -> Acreditacio: calcularHash(detallsAcreditacio)
+Acreditacio --> ServeiAcreditacions: hashAcreditacio
+
+ServeiAcreditacions -> Laboratori: signarHash(hashAcreditacio, clauPrivada)
+Laboratori --> ServeiAcreditacions: signaturaAcreditacio
+
+ServeiAcreditacions -> GestorBlockchain: registrarAcreditacio(clau, hash, sign)
+GestorBlockchain -> Blockchain: Crea Transacció(clau, hash, sign)
+Blockchain <-- Blockchain: Transacció Confirmada(IDTransaccio)
+GestorBlockchain --> ServeiAcreditacions: IDTransaccio
+
+ServeiAcreditacions -> Acreditacio: guardaReferenciaBlockchain(ID)
+ServeiAcreditacions --> InterficieUsuari: Acreditació Registrada(ID)
+InterficieUsuari -> Laboratori: Mostra Confirmació(IDTransaccio)
+@enduml
