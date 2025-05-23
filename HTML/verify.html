@@ -277,6 +277,15 @@
             color: #dc3545; /* Roig */
             font-weight: bold;
         }
+        /* Estils per al nom del signer dins del <li> */
+        .signer-name-verified {
+            color: #28a745; /* Verd */
+            font-weight: bold;
+        }
+        .signer-name-unverified {
+            color: #dc3545; /* Roig */
+            font-weight: bold;
+        }
 
         .invalidate-button:disabled {
             background-color: #6c757d; 
@@ -308,7 +317,7 @@
 
         <div class="input-group">
             <label for="accreditationRegistryContractAddress">Adreça del Contracte AccreditationRegistry:</label>
-            <input type="text" id="accreditationRegistryContractAddress" value="0x3470234ABA5e37dac6d84Bd6CC5B3f14e40414EE">
+            <input type="text" id="accreditationRegistryContractAddress" value="0x09298c5cd7E935835dC27a03eC453e5CE1514755">
             <small>¡Assegura't que esta adreça siga la del teu contracte desplegat!</small>
         </div>
 
@@ -1192,6 +1201,40 @@
                 "outputs": [],
                 "stateMutability": "nonpayable",
                 "type": "function"
+            },
+            {
+                "inputs": [ // Assuming this is the 'signers' function ABI you're referring to
+                    {
+                        "internalType": "address",
+                        "name": "",
+                        "type": "address"
+                    }
+                ],
+                "name": "signers",
+                "outputs": [
+                    {
+                        "internalType": "string",
+                        "name": "name",
+                        "type": "string"
+                    },
+                    {
+                        "internalType": "uint256",
+                        "name": "timestamp",
+                        "type": "uint256"
+                    },
+                    {
+                        "internalType": "address",
+                        "name": "signerAddress",
+                        "type": "address"
+                    },
+                    {
+                        "internalType": "bool",
+                        "name": "isVerified",
+                        "type": "bool"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
             }
         ];
 
@@ -1244,7 +1287,7 @@
 
         // Funció per a mostrar missatges específics de l'info del laboratori
         function showLabInfoStatus(targetElement, message, isError = false) {
-            let statusDiv = targetElement.nextElementSibling; // Intenta trobar un div d'estat ja existent
+            let statusDiv = targetElement.nextElementSibling; 
             if (!statusDiv || !statusDiv.classList.contains('lab-info-status')) {
                 statusDiv = document.createElement('div');
                 statusDiv.className = 'lab-info-status';
@@ -1263,14 +1306,13 @@
                 currentMode = 'api';
                 document.body.classList.remove('mode-solitary');
                 document.body.classList.add('mode-api');
-                showResult('Mode API activat. Les transaccions s\'enviaran a http://127.0.0.1.', false);
+                showResult('Mode API activat. Les transaccions s\'enviaran a http://127.0.0.1:8888.', false);
             } else {
                 currentMode = 'solitary';
                 document.body.classList.remove('mode-api');
                 document.body.classList.add('mode-solitary');
                 showResult('Mode Solitari activat. Les transaccions s\'enviaran via MetaMask.', false);
             }
-            // Opcional: Re-renderitzar la llista de firmants per assegurar-se que els botons d'invalidació estiguin actualitzats visualment si fos necessari
             if (currentDocumentHash && documentSignerContract) {
                 updateInvalidateButtonsState();
             }
@@ -1279,7 +1321,6 @@
 
         // Inicialitzar Ethers.js i el mode
         window.addEventListener('load', async () => {
-            // Inicialitzar el mode per defecte (solitari)
             toggleMode(); 
 
             if (typeof window.ethereum !== 'undefined') {
@@ -1292,12 +1333,10 @@
                     txSenderAccountSpan.textContent = connectedAccount;
                     signerAccountForEIP712Span.textContent = connectedAccount;
 
-                    // Habilitar el botó de generar signatura si ja hi ha un fitxer seleccionat
                     if (signDocumentFileInput.files.length > 0) {
                         generateSignatureBtn.disabled = false;
                     }
 
-                    // Escoltar canvis de compte
                     window.ethereum.on('accountsChanged', (accounts) => {
                         console.log("ACC", accounts);
                         connectedAccount = accounts[0];
@@ -1327,8 +1366,8 @@
                 const reader = new FileReader();
                 reader.onload = async (event) => {
                     try {
-                        const buffer = event.target.result; // ArrayBuffer
-                        const uint8Array = new Uint8Array(buffer); // Convertir a Uint8Array
+                        const buffer = event.target.result; 
+                        const uint8Array = new Uint8Array(buffer); 
                         
                         const hashHex = ethers.utils.keccak256(uint8Array); 
                         resolve(hashHex);
@@ -1380,7 +1419,7 @@
                 showSigningStatus('Primer selecciona un document i calcula el seu hash (Pas 1).', true);
                 return;
             }
-            const contractAddress = documentSignerContractAddressInput.value.trim(); // Usar la dirección correcta
+            const contractAddress = documentSignerContractAddressInput.value.trim();
             if (!ethers.utils.isAddress(contractAddress)) {
                 showSigningStatus('L\'adreça del contracte DocumentSigner no és vàlida.', true);
                 return;
@@ -1388,13 +1427,10 @@
 
             showSigningStatus('Obtenint nonce i preparant la signatura EIP-712...', false);
             try {
-                // Instanciar el contracte DocumentSigner per a lectura de dades (nonce)
                 documentSignerContract = new ethers.Contract(contractAddress, DOCUMENT_SIGNER_ABI, provider);
                 
-                // Obtindre el nonce actual del compte que va a firmar (connectedAccount)
                 const nonceForEIP712Signature = await documentSignerContract.nonce(connectedAccount);
 
-                // Guardar l'adreça que va a firmar per al pas 3
                 signerAddressEIP712 = connectedAccount;
 
                 const domain = {
@@ -1416,13 +1452,12 @@
                     nonce: nonceForEIP712Signature,
                 };
 
-                // Demanar a MetaMask que firme les dades EIP-712
                 generatedSignature = await signer._signTypedData(domain, types, message);
                 signatureDisplayTextArea.value = generatedSignature;
-                signerAddressForSignInput.value = signerAddressEIP712; // Guardar per al pas 3
+                signerAddressForSignInput.value = signerAddressEIP712; 
 
                 showSigningStatus(`Signatura EIP-712 generada amb èxit per ${signerAddressEIP712}.`, false);
-                sendSignTxBtn.disabled = false; // Habilitar Pas 3
+                sendSignTxBtn.disabled = false; 
 
             } catch (error) {
                 console.error("Error en generar la signatura EIP-712:", error);
@@ -1440,10 +1475,7 @@
                 showSigningStatus('Primer completa els passos 1 i 2.', true);
                 return;
             }
-            // No es pot enviar una transacció sense un compte connectat a MetaMask.
-            // Si el mode és API, el `signer` no s'utilitza directament per a la transacció,
-            // però `connectedAccount` segueix sent rellevant per a la UI.
-            if (!connectedAccount) {
+            if (!signer || !connectedAccount) {
                 showSigningStatus('Connecta el teu MetaMask per a enviar la transacció.', true);
                 return;
             }
@@ -1459,7 +1491,6 @@
             try {
                 if (currentMode === 'solitary') {
                     console.log("ADDR2", signerAddressEIP712);
-                    // Mode Solitari: Transacció via MetaMask
                     const contractWithTxSigner = new ethers.Contract(contractAddress, DOCUMENT_SIGNER_ABI, signer);
                     const tx = await contractWithTxSigner.signDocument(
                         signingDocHash,
@@ -1470,17 +1501,14 @@
                     await tx.wait(); 
                     showSigningStatus('¡Document firmat amb èxit en la blockchain!', false);
 
-                } else { // currentMode === 'api'
+                } else { 
                     console.log("ADDR", signerAddressEIP712);
-                    // Mode API: Transacció via API REST
                     const apiEndpoint = 'http://127.0.0.1:8888/sign_document_contract';
                     const payload = {
                         document_hash: signingDocHash,
                         signer_address: ethers.utils.getAddress(signerAddressEIP712),
                         signature: generatedSignature
                     };
-                    
-                    
                     
                     showSigningStatus(`Enviant dades a l'API REST: ${apiEndpoint}...`, false);
                     const response = await fetch(apiEndpoint, {
@@ -1502,7 +1530,6 @@
                     showSigningStatus('¡Document firmat amb èxit a través de l\'API!', false);
                 }
 
-                // Netejar camps i deshabilitar botons per a una nova signatura
                 signDocumentFileInput.value = '';
                 documentHashToSignInput.value = '';
                 signatureDisplayTextArea.value = '';
@@ -1514,7 +1541,6 @@
                 generateSignatureBtn.disabled = true;
                 sendSignTxBtn.disabled = true;
 
-                // Opcional: Recarregar la llista de firmants en la secció de verificació
                 setTimeout(() => getAndDisplaySigners(), 2000); 
 
             } catch (error) {
@@ -1543,7 +1569,7 @@
             }
 
             const fileInput = document.getElementById('documentFile');
-            const contractAddress = documentSignerContractAddressInput.value.trim(); // Usar la dirección correcta
+            const contractAddress = documentSignerContractAddressInput.value.trim(); 
 
             if (!fileInput.files.length) {
                 showResult('Per favor, selecciona un fitxer.', true);
@@ -1561,7 +1587,6 @@
                 currentDocumentHash = await calculateFileHash(file); 
                 showResult(`Hash del document calculat (Keccak256): ${currentDocumentHash}. Obtenint firmants...`);
 
-                // Instanciar el contracte DocumentSigner per a lectura de dades (getSigners)
                 documentSignerContract = new ethers.Contract(contractAddress, DOCUMENT_SIGNER_ABI, provider);
 
                 const signers = await documentSignerContract.getSigners(currentDocumentHash);
@@ -1588,22 +1613,50 @@
             buttonElement.textContent = 'Verificant...';
             buttonElement.disabled = true;
 
-            // Eliminem l'anterior missatge d'estat si n'hi haguera
             const existingStatus = buttonElement.parentNode.querySelector('.verification-status');
             if (existingStatus) {
                 existingStatus.remove();
             }
 
+            // Seleccionar el span que conté l'adreça del firmant
+            const signerSpan = buttonElement.parentNode.parentNode.querySelector('span:first-of-type');
+            const originalSignerAddressText = `<strong>Firmant:</strong> ${signerAddress}`; // Guardar l'estat original
+
             try {
                 const isValid = await documentSignerContract.verifyStoredSignature(currentDocumentHash, signerAddress);
 
                 if (isValid) {
-                    buttonElement.textContent = 'Vàlida'; // Canviem el text del botó
-                    buttonElement.classList.remove('verify-button'); // Eliminem classe base
-                    buttonElement.classList.add('verify-button', 'valid'); // Afegim classes per a el color verd
+                    buttonElement.textContent = 'Vàlida'; 
+                    buttonElement.classList.remove('verify-button'); 
+                    buttonElement.classList.add('verify-button', 'valid'); 
+
+                    // --- NOU: Obtenir i mostrar informació del Signer (persona) ---
+                    const registryAddress = accreditationRegistryContractAddressInput.value.trim();
+                    if (ethers.utils.isAddress(registryAddress)) {
+                        accreditationRegistryContract = new ethers.Contract(registryAddress, ACCREDITATION_REGISTRY_ABI, provider);
+                        try {
+                            // La funció 'signers' del contracte AccreditationRegistry que retorna la struct Signer
+                            const signerInfo = await accreditationRegistryContract.signers(signerAddress);
+                            let signerName = signerInfo.name;
+                            let isSignerVerified = signerInfo.isVerified;
+                            let signerExists = (signerInfo.signerAddress != ethers.constants.AddressZero); // Comprovar si el signer existeix al registre
+                            if (signerExists && signerName && signerName.length > 0) {
+                                const nameClass = isSignerVerified ? 'signer-name-verified' : 'signer-name-unverified';
+                                signerSpan.innerHTML = `<strong>Firmant:</strong> ${signerAddress} <span class="${nameClass}">(${signerName}${isSignerVerified ? ' - Verificat' : ' - No Verificat'})</span>`;
+                            } else {
+                                // Si no hi ha nom de signer al registre o el signer no existeix
+                                signerSpan.innerHTML = `<strong>Firmant:</strong> ${signerAddress} <span class="signer-name-unverified">(Signer no registrat/no verificat)</span>`;
+                            }
+                        } catch (signerError) {
+                            console.warn(`No s'ha pogut obtenir informació detallada del signer (${signerAddress}) des d'AccreditationRegistry:`, signerError);
+                            signerSpan.innerHTML = `<strong>Firmant:</strong> ${signerAddress} <span class="signer-name-unverified">(Error al carregar info del signer)</span>`;
+                        }
+                    } else {
+                        console.warn('Adreça del contracte AccreditationRegistry no vàlida, no es pot consultar la informació del signer.');
+                    }
+                    // --- FIN NOU ---
+
                 } else {
-                    // Si no és vàlida, mantenim el botó amb la seua aparença original
-                    // i mostrem l'error en un div separat com abans.
                     const verificationStatusDiv = document.createElement('div');
                     verificationStatusDiv.className = 'verification-status failure';
                     verificationStatusDiv.textContent = 'Signatura Invàlida.';
@@ -1616,7 +1669,7 @@
                 verificationStatusDiv.textContent = `Error: ${error.message || 'Desconegut'}`;
                 buttonElement.parentNode.appendChild(verificationStatusDiv);
             } finally {
-                buttonElement.disabled = false; // Sempre re-habilitem el botó
+                buttonElement.disabled = false;
             }
         }
 
@@ -1666,7 +1719,6 @@
                 const signature = await signer._signTypedData(domain, types, message);
 
                 if (currentMode === 'solitary') {
-                    // Mode Solitari: Transacció via MetaMask
                     showResult(`Signatura EIP-712 generada. Enviant transacció d'invalidació via MetaMask...`);
                     const contractWithSigner = documentSignerContract.connect(signer);
                     const tx = await contractWithSigner.invalidateSignature(
@@ -1678,8 +1730,7 @@
                     await tx.wait();
                     invalidationStatusDiv.classList.add('success');
                     invalidationStatusDiv.textContent = '¡Signatura invalidada amb èxit!';
-                } else { // currentMode === 'api'
-                    // Mode API: Transacció via API REST
+                } else { 
                     const apiEndpoint = 'http://127.0.0.1:8888/invalidate_signature_contract';
                     const payload = {
                         document_hash: currentDocumentHash,
@@ -1751,7 +1802,6 @@
             buttonElement.textContent = 'Carregant info...';
             buttonElement.disabled = true;
 
-            // Eliminar cualquier estado anterior de info del laboratorio
             const existingLabInfoStatus = buttonElement.parentNode.querySelector('.lab-info-status');
             if (existingLabInfoStatus) {
                 existingLabInfoStatus.remove();
@@ -1766,9 +1816,8 @@
                     const verifiedClass = isVerified ? 'lab-status-verified' : 'lab-status-unverified';
                     infoMessage += `Nom: ${labName}<br><span class="${verifiedClass}">Verificat: ${isVerified ? 'Sí' : 'No'}</span><br>`;
                     
-                    // Obtener todas las acreditaciones del laboratorio
                     const accreditations = await accreditationRegistryContract.getAllAccreditationsForLaboratory(laboratoryAddress);
-                    const currentTimestamp = Math.floor(Date.now() / 1000); // Timestamp actual en segundos
+                    const currentTimestamp = Math.floor(Date.now() / 1000); 
 
                     if (accreditations.length > 0) {
                         infoMessage += "<br>Acreditacions:<br>";
@@ -1776,7 +1825,6 @@
                             const validFromDate = new Date(parseInt(acc.validFrom.toString()) * 1000);
                             const validUntilDate = new Date(parseInt(acc.validUntil.toString()) * 1000);
                             
-                            // Comprobar la validez de la acreditación contra el timestamp actual
                             const isValidAccreditation = (acc.validFrom <= currentTimestamp && acc.validUntil >= currentTimestamp);
                             const accreditationClass = isValidAccreditation ? 'accreditation-valid' : 'accreditation-invalid';
 
@@ -1785,7 +1833,7 @@
                         showLabInfoStatus(buttonElement, infoMessage, false);
                     } else {
                         infoMessage += "<br>Acreditacions: Cap acreditació trobada per a este laboratori.";
-                        showLabInfoStatus(buttonElement, infoMessage, false); // No es un error, solo falta de acreditaciones
+                        showLabInfoStatus(buttonElement, infoMessage, false); 
                     }
                 } else {
                     infoMessage = `El laboratori ${laboratoryAddress} no existeix en el registre d'acreditacions.`;
@@ -1808,11 +1856,12 @@
                 const li = signerItems[i];
                 const signerAddressSpan = li.querySelector('span:first-of-type'); 
                 const signerAddressText = signerAddressSpan.textContent;
-                const currentSignerAddress = signerAddressText.split(': ')[1].trim(); 
+                // Extraiem només l'adreça base, sense el text ni l'estat afegit dinàmicament
+                const currentSignerAddress = signerAddressText.split(':')[1].split('(')[0].trim(); 
 
                 const invalidateButton = li.querySelector('.invalidate-button');
                 const verifyButton = li.querySelector('.verify-button'); 
-                const labInfoButton = li.querySelector('.lab-info-button'); // Obtenim el botó d'info del laboratori
+                const labInfoButton = li.querySelector('.lab-info-button');
 
                 if (invalidateButton) { 
                     if (connectedAccount && currentSignerAddress.toLowerCase() === connectedAccount.toLowerCase()) {
@@ -1834,6 +1883,8 @@
                     if (existingStatus) {
                         existingStatus.remove();
                     }
+                    // Reiniciar el contingut del span del firmant al seu estat original (només l'adreça)
+                    signerAddressSpan.innerHTML = `<strong>Firmant:</strong> ${currentSignerAddress}`;
                 }
 
                 // Netejar missatges d'estat del laboratori si existien
@@ -1845,7 +1896,7 @@
         }
 
 
-        // Funció per a mostrar els firmants en la interfície (adaptada per al nou botó)
+        // Funció per a mostrar els firmants en la interfície
         function displaySigners(signers) {
             signersUl.innerHTML = ''; 
 
