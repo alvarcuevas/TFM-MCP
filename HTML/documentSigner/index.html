@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="val">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verificar i signar documents</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.2.0/ethers.umd.min.js" type="application/javascript"></script>
+</head>
+<body class="mode-solitary">
+    <div class="mode-toggle-container">
+        <span class="mode-label">Mode Solitari</span>
+        <label class="switch">
+            <input type="checkbox" id="modeToggle" onchange="toggleMode()">
+            <span class="slider round"></span>
+        </label>
+        <span class="mode-label">Mode API</span>
+    </div>
+
+    <div class="container">
+        <h1>Verificar i signar documents</h1>
+
+        <div class="input-group">
+            <label for="documentSignerContractAddress">Adreça del Contracte DocumentSigner:</label>
+            <input type="text" id="documentSignerContractAddress" value="0xc4CE88Db5D099CD68C5cb2554c2A54f4a90a111c">
+        </div>
+
+        <div class="input-group">
+            <label for="accreditationRegistryContractAddress">Adreça del Contracte AccreditationRegistry:</label>
+            <input type="text" id="accreditationRegistryContractAddress" value="0x602eA1eBb0aDB4113D6aDaeE139ba46DD8E82a49">
+        </div>
+
+        <div id="result" style="position: fixed; bottom: 10px; right: 10px;">
+            Carregant Ethers.js i esperant les teues accions...
+        </div>
+
+        <h2 class="section-title">Signar un nou document</h2>
+        <div class="input-group">
+            <label for="signDocumentFile">Pas 1: Selecciona un fitxer per a signar i obtindre el seu hash (Keccak256):</label>
+            <input type="file" id="signDocumentFile" onchange="step1_selectFileAndHash()">
+            <input type="text" id="documentHashToSign" placeholder="Hash del document (0x...)" readonly>
+        </div>
+
+        <div class="input-group">
+            <label>Pas 2: Generar la signatura EIP-712 amb el teu compte de MetaMask:</label>
+            <p>Compte actual de MetaMask per a la signatura: <span id="signerAccountForEIP712">No connectada</span></p>
+            <button onclick="step2_generateEIP712Signature()" id="generateSignatureBtn" disabled>Generar Signatura EIP-712</button>
+            <textarea id="signatureDisplay" placeholder="La signatura EIP-712 apareixerà ací" readonly></textarea>
+            <input type="hidden" id="signerAddressForSign"> </div>
+
+        <div class="input-group">
+            <label>Pas 3: Enviar la transacció de signatura al contracte (pot ser amb un altre compte de MetaMask):</label>
+            <p>Compte actual de MetaMask per a enviar la transacció: <span id="txSenderAccount">No connectada</span></p>
+            <button onclick="step3_sendSignTransaction()" id="sendSignTxBtn" disabled>Enviar Transacció de Signatura</button>
+            <div class="signing-status" id="signingStatus"></div>
+        </div>
+
+        <h2 class="section-title">Verificar i eliminar signatures existents</h2>
+        <div class="input-group">
+            <label for="documentFile">Selecciona un fitxer per a verificar/eliminar les seues firmes:</label>
+            <input type="file" id="documentFile">
+        </div>
+
+        <div class="input-group">
+            <button onclick="getAndDisplaySigners()">Obtindre Signataris</button>
+        </div>
+
+        <div id="signersList">
+            <h2>Firmants:</h2>
+            <ul class="signer-list" id="signersUl">
+                </ul>
+        </div>
+    </div>
+
+    <script src="abis.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestió de registre d'acreditacions</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.2.0/ethers.umd.min.js" type="application/javascript"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>Gestió de registre d'acreditacions</h1>
+
+        <div class="input-group">
+            <label for="registryContractAddress">Adreça del contracte AccreditationRegistry:</label>
+            <input type="text" id="registryContractAddress" value="0x602eA1eBb0aDB4113D6aDaeE139ba46DD8E82a49">
+        </div>
+
+        <div id="result">
+            Carregant Ethers.js i esperant les teues accions...
+        </div>
+
+        <h2 class="section-title">Informació del compte connectat</h2>
+        <div class="input-group">
+            <p>Compte actual de MetaMask: <span id="connectedAccountDisplay">No connectada</span></p>
+            <p>Es Auditor: <span id="isAuditorStatus">Carregant...</span></p>
+            <p>Es Propietari: <span id="isOwnerStatus">Carregant...</span></p>
+        </div>
+
+
+        <h2 class="section-title">Gestió d'auditors</h2>
+        <div class="input-group">
+            <label for="auditorAddressInput">Adreça de l'auditor:</label>
+            <input type="text" id="auditorAddressInput" placeholder="0x..." />
+            <div class="action-buttons">
+                <button onclick="addAuditor()">Afegir auditor</button>
+                <button onclick="removeAuditor()">Eliminar auditor</button>
+            </div>
+            <div id="auditorStatus" class="status-message"></div>
+        </div>
+
+        <h2 class="section-title">Gestió de laboratoris</h2>
+        <div class="input-group">
+            <label for="labAddressAddInput">Adreça del laboratori:</label>
+            <input type="text" id="labAddressAddInput" placeholder="0x..." />
+            <label for="labNameAddInput">Nom del laboratori:</label>
+            <input type="text" id="labNameAddInput" placeholder="Nom del laboratori" />
+            <button onclick="addLaboratory()">Afegir laboratori</button>
+            <div id="addLabStatus" class="status-message"></div>
+        </div>
+
+        <div class="input-group">
+            <label for="labAddressVerifyInput">Adreça del laboratori a verificar/desverificar:</label>
+            <input type="text" id="labAddressVerifyInput" placeholder="0x..." />
+            <label for="labVerificationStatusSelect">Estat de verificació:</label>
+            <select id="labVerificationStatusSelect">
+                <option value="true">Verificat</option>
+                <option value="false">No verificat</option>
+            </select>
+            <button onclick="setLaboratoryVerificationStatus()">Establir estat de verificació</button>
+            <div id="verifyLabStatus" class="status-message"></div>
+        </div>
+
+        <div class="input-group">
+            <label for="labAddressInfoInput">Adreça del laboratori per a informació:</label>
+            <input type="text" id="labAddressInfoInput" placeholder="0x..." />
+            <button onclick="getLaboratoryInfo()">Obtindre informació del laboratori</button>
+            <div id="labInfoDisplay" class="status-message info"></div>
+        </div>
+
+        <h2 class="section-title">Gestió de signataris</h2>
+        <div class="input-group">
+            <label for="signerNameInput">Nom de signatari (per a registrar compte actual com a signatari):</label>
+            <input type="text" id="signerNameInput" placeholder="El meu nom" />
+            <button onclick="addModSigner()">Afegir/modificar signatari</button>
+            <div id="addSignerStatus" class="status-message"></div>
+        </div>
+
+        <div class="input-group">
+            <label for="signerAddressVerifyInput">Adreça del signatari a verificar/desverificar:</label>
+            <input type="text" id="signerAddressVerifyInput" placeholder="0x..." />
+            <label for="signerVerificationStatusSelect">Estat de verificació:</label>
+            <select id="signerVerificationStatusSelect">
+                <option value="true">Verificat</option>
+                <option value="false">No Verificat</option>
+            </select>
+            <button onclick="setSignerVerificationStatus()">Establir estat de verificació</button>
+            <div id="verifySignerStatus" class="status-message"></div>
+        </div>
+
+        <h2 class="section-title">Gestió d'acreditacions</h2>
+        <div class="input-group">
+            <label for="accLabAddressInput">Adreça del laboratori:</label>
+            <input type="text" id="accLabAddressInput" placeholder="0x..." />
+            <label for="accNameInput">Nom de l'acreditació:</label>
+            <input type="text" id="accNameInput" placeholder="Ex: ISO 17025" />
+            <label for="accValidFromInput">Vàlid des de:</label>
+            <input type="date" id="accValidFromInput" />
+            <label for="accValidUntilInput">Vàlid fins a:</label>
+            <input type="date" id="accValidUntilInput" />
+            <button onclick="addModAccreditation()">Afegir/actualitzar acreditació</button>
+            <div id="addAccreditationStatus" class="status-message"></div>
+        </div>
+
+        <div class="input-group">
+            <label for="revokeAccLabAddressInput">Adreça del laboratori:</label>
+            <input type="text" id="revokeAccLabAddressInput" placeholder="0x..." />
+            <label for="revokeAccNameInput">Nom de l'acreditació a revocar:</label>
+            <input type="text" id="revokeAccNameInput" placeholder="Ex: ISO 17025" />
+            <button onclick="revokeAccreditation()">Revocar acreditació</button>
+            <div id="revokeAccreditationStatus" class="status-message"></div>
+        </div>
+
+        <div class="input-group">
+            <label for="checkAccLabAddressInput">Adreça del laboratori:</label>
+            <input type="text" id="checkAccLabAddressInput" placeholder="0x..." />
+            <label for="checkAccNameInput">Nom de l'acreditació a comprovar:</label>
+            <input type="text" id="checkAccNameInput" placeholder="Ex: ISO 17025" />
+            <button onclick="hasValidAccreditation()">Comprovar acreditació válida</button>
+            <div id="checkAccreditationStatus" class="status-message info"></div>
+        </div>
+
+        <div class="input-group">
+            <label for="getAccDetailsLabAddressInput">Adreça del laboratori:</label>
+            <input type="text" id="getAccDetailsLabAddressInput" placeholder="0x..." />
+            <label for="getAccDetailsNameInput">Nom de l'acreditació:</label>
+            <input type="text" id="getAccDetailsNameInput" placeholder="Ex: ISO 17025 - XXXX" />
+            <button onclick="getAccreditationDetails()">Obtindre detalls de l'acreditació</button>
+            <div id="accDetailsDisplay" class="status-message info"></div>
+        </div>
+
+        <div class="input-group">
+            <label for="getAllAccLabAddressInput">Adreça del laboratori:</label>
+            <input type="text" id="getAllAccLabAddressInput" placeholder="0x..." />
+            <button onclick="getAllAccreditationsForLaboratory()">Obtindre totes les acreditacions</button>
+            <div id="allAccreditationsDisplay" class="status-message info"></div>
+        </div>
+
+    </div>
+
+    <script src="abis.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
