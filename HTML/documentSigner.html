@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Verificar, Eliminar i Firmar Documents (Ethers.js / Keccak256)</title>
+    <title>Verificar i signar documents</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.2.0/ethers.umd.min.js" type="application/javascript"></script>
     <style>
         body {
@@ -11,13 +11,13 @@
             margin: 20px;
             background-color: #f4f4f4; /* Color per defecte */
             color: #333;
-            transition: background-color 0.5s ease; /* Transició suau per al canvi de fons */
+            transition: background-color 0.5s ease; 
         }
         body.mode-solitary {
-            background-color: #f4f4f4; /* Mode Solitari: Gris clar */
+            background-color: #f4f4f4; /* Mode Solitari */
         }
         body.mode-api {
-            background-color: #e0f7fa; /* Mode API: Blau cel clar */
+            background-color: #e0f7fa; /* Mode API */
         }
 
         /* Estils per a l'interruptor de mode */
@@ -187,16 +187,16 @@
             display: flex;
             gap: 10px;
             margin-top: 10px;
-            flex-wrap: wrap; /* Permet que els botons s'ajusten si no hi ha espai */
+            flex-wrap: wrap; 
         }
         .verify-button {
             background-color: #ffc107; /* Taronja inicial */
-            color: #333; /* Text fosc per a un bon contrast */
+            color: #333; /* Text fosc */
         }
         .verify-button:hover {
             background-color: #e0a800; /* Taronja més fosc en hover */
         }
-        /* Nova classe per al botó de verificació vàlida */
+
         .verify-button.valid {
             background-color: #28a745; /* Verd */
             color: white;
@@ -217,7 +217,7 @@
         .sign-button:hover {
             background-color: #e0a800;
         }
-        /* Nou estil per al botó de "Veure Info Laboratori" */
+
         .lab-info-button {
             background-color: #17a2b8; /* Turquesa/blau clar */
             color: white;
@@ -260,7 +260,7 @@
             white-space: pre-wrap;
             margin-top: 10px; /* Espai addicional per a la informació del lab */
         }
-        /* Noves classes per a l'estat de verificació del laboratori i acreditacions */
+        
         .lab-status-verified {
             color: #28a745; /* Verd */
             font-weight: bold;
@@ -277,7 +277,7 @@
             color: #dc3545; /* Roig */
             font-weight: bold;
         }
-        /* Estils per al nom del signer dins del <li> */
+
         .signer-name-verified {
             color: #28a745; /* Verd */
             font-weight: bold;
@@ -292,7 +292,12 @@
             cursor: not-allowed;
         }
         #signatureDisplay, #signerAddressForSign {
-            word-break: break-all; /* Perquè les adreces llargues no trenquen el disseny */
+            word-break: break-all; 
+        }
+        .resultWindow {
+          position: absolute;
+          bottom: 10px;
+          right: 10px;
         }
     </style>
 </head>
@@ -307,27 +312,25 @@
     </div>
 
     <div class="container">
-        <h1>Verificar, Eliminar i Firmar Documents</h1>
+        <h1>Verificar i signar documents</h1>
 
         <div class="input-group">
             <label for="documentSignerContractAddress">Adreça del Contracte DocumentSigner:</label>
             <input type="text" id="documentSignerContractAddress" value="0xc4CE88Db5D099CD68C5cb2554c2A54f4a90a111c">
-            <small>¡Assegura't que esta adreça siga la del teu contracte desplegat!</small>
         </div>
 
         <div class="input-group">
             <label for="accreditationRegistryContractAddress">Adreça del Contracte AccreditationRegistry:</label>
-            <input type="text" id="accreditationRegistryContractAddress" value="0x09298c5cd7E935835dC27a03eC453e5CE1514755">
-            <small>¡Assegura't que esta adreça siga la del teu contracte desplegat!</small>
+            <input type="text" id="accreditationRegistryContractAddress" value="0x602eA1eBb0aDB4113D6aDaeE139ba46DD8E82a49">
         </div>
 
-        <div id="result">
+        <div id="result" style="position: fixed; bottom: 10px; right: 10px;">
             Carregant Ethers.js i esperant les teues accions...
         </div>
 
-        <h2 class="section-title">Firmar un Nou Document</h2>
+        <h2 class="section-title">Signar un nou document</h2>
         <div class="input-group">
-            <label for="signDocumentFile">Pas 1: Selecciona un fitxer per a firmar i obtindre el seu hash (Keccak256):</label>
+            <label for="signDocumentFile">Pas 1: Selecciona un fitxer per a signar i obtindre el seu hash (Keccak256):</label>
             <input type="file" id="signDocumentFile" onchange="step1_selectFileAndHash()">
             <input type="text" id="documentHashToSign" placeholder="Hash del document (0x...)" readonly>
         </div>
@@ -346,14 +349,14 @@
             <div class="signing-status" id="signingStatus"></div>
         </div>
 
-        <h2 class="section-title">Verificar i Eliminar Firmes Existents</h2>
+        <h2 class="section-title">Verificar i eliminar signatures existents</h2>
         <div class="input-group">
             <label for="documentFile">Selecciona un fitxer per a verificar/eliminar les seues firmes:</label>
             <input type="file" id="documentFile">
         </div>
 
         <div class="input-group">
-            <button onclick="getAndDisplaySigners()">Obtindre Firmants</button>
+            <button onclick="getAndDisplaySigners()">Obtindre Signataris</button>
         </div>
 
         <div id="signersList">
@@ -1203,7 +1206,7 @@
                 "type": "function"
             },
             {
-                "inputs": [ // Assuming this is the 'signers' function ABI you're referring to
+                "inputs": [
                     {
                         "internalType": "address",
                         "name": "",
@@ -1258,7 +1261,7 @@
         const documentSignerContractAddressInput = document.getElementById('documentSignerContractAddress');
         const accreditationRegistryContractAddressInput = document.getElementById('accreditationRegistryContractAddress'); 
 
-        // Elements de la nova secció de signatura
+        // Elements de la secció de signatura
         const signDocumentFileInput = document.getElementById('signDocumentFile');
         const documentHashToSignInput = document.getElementById('documentHashToSign');
         const signerAccountForEIP712Span = document.getElementById('signerAccountForEIP712');
@@ -1499,7 +1502,7 @@
                     );
                     showSigningStatus('Transacció de signatura enviada. Esperant confirmació...', false);
                     await tx.wait(); 
-                    showSigningStatus('¡Document firmat amb èxit en la blockchain!', false);
+                    showSigningStatus('Document signat amb èxit a la blockchain!', false);
 
                 } else { 
                     console.log("ADDR", signerAddressEIP712);
@@ -1527,7 +1530,7 @@
 
                     const responseData = await response.json();
                     showSigningStatus(`Resposta de l'API: ${JSON.stringify(responseData)}`, false);
-                    showSigningStatus('¡Document firmat amb èxit a través de l\'API!', false);
+                    showSigningStatus('Document signat amb èxit a través de l\'API!', false);
                 }
 
                 signDocumentFileInput.value = '';
@@ -1605,7 +1608,7 @@
         // Funció per a verificar una signatura individual
         async function verifyStoredSignerSignature(signerAddress, buttonElement) {
             if (!documentSignerContract || !currentDocumentHash) {
-                showResult('Primer, obtén els firmants d\'un document.', true);
+                showResult('Primer, obtén els signants d\'un document.', true);
                 return;
             }
 
@@ -1618,9 +1621,8 @@
                 existingStatus.remove();
             }
 
-            // Seleccionar el span que conté l'adreça del firmant
             const signerSpan = buttonElement.parentNode.parentNode.querySelector('span:first-of-type');
-            const originalSignerAddressText = `<strong>Firmant:</strong> ${signerAddress}`; // Guardar l'estat original
+            const originalSignerAddressText = `<strong>Signatari:</strong> ${signerAddress}`; // Guardar l'estat original
 
             try {
                 const isValid = await documentSignerContract.verifyStoredSignature(currentDocumentHash, signerAddress);
@@ -1630,7 +1632,7 @@
                     buttonElement.classList.remove('verify-button'); 
                     buttonElement.classList.add('verify-button', 'valid'); 
 
-                    // --- NOU: Obtenir i mostrar informació del Signer (persona) ---
+                    // Obtenir i mostrar informació del signant (persona) ---
                     const registryAddress = accreditationRegistryContractAddressInput.value.trim();
                     if (ethers.utils.isAddress(registryAddress)) {
                         accreditationRegistryContract = new ethers.Contract(registryAddress, ACCREDITATION_REGISTRY_ABI, provider);
@@ -1642,19 +1644,18 @@
                             let signerExists = (signerInfo.signerAddress != ethers.constants.AddressZero); // Comprovar si el signer existeix al registre
                             if (signerExists && signerName && signerName.length > 0) {
                                 const nameClass = isSignerVerified ? 'signer-name-verified' : 'signer-name-unverified';
-                                signerSpan.innerHTML = `<strong>Firmant:</strong> ${signerAddress} <span class="${nameClass}">(${signerName}${isSignerVerified ? ' - Verificat' : ' - No Verificat'})</span>`;
+                                signerSpan.innerHTML = `<strong>Signatari:</strong> ${signerAddress} <span class="${nameClass}">(${signerName}${isSignerVerified ? ' - Verificat' : ' - No Verificat'})</span>`;
                             } else {
                                 // Si no hi ha nom de signer al registre o el signer no existeix
-                                signerSpan.innerHTML = `<strong>Firmant:</strong> ${signerAddress} <span class="signer-name-unverified">(Signer no registrat/no verificat)</span>`;
+                                signerSpan.innerHTML = `<strong>Signatari:</strong> ${signerAddress} <span class="signer-name-unverified">(Signer no registrat/no verificat)</span>`;
                             }
                         } catch (signerError) {
                             console.warn(`No s'ha pogut obtenir informació detallada del signer (${signerAddress}) des d'AccreditationRegistry:`, signerError);
-                            signerSpan.innerHTML = `<strong>Firmant:</strong> ${signerAddress} <span class="signer-name-unverified">(Error al carregar info del signer)</span>`;
+                            signerSpan.innerHTML = `<strong>Signatari:</strong> ${signerAddress} <span class="signer-name-unverified">(Error al carregar info del signer)</span>`;
                         }
                     } else {
                         console.warn('Adreça del contracte AccreditationRegistry no vàlida, no es pot consultar la informació del signer.');
                     }
-                    // --- FIN NOU ---
 
                 } else {
                     const verificationStatusDiv = document.createElement('div');
@@ -1849,14 +1850,13 @@
         }
 
 
-        // Funció per a actualitzar l'estat dels botons d'invalidació i netejar estats visuals
+        // Funció per a actualitzar l'estat dels botons d'invalidació
         function updateInvalidateButtonsState() {
             const signerItems = signersUl.children; 
             for (let i = 0; i < signerItems.length; i++) {
                 const li = signerItems[i];
                 const signerAddressSpan = li.querySelector('span:first-of-type'); 
                 const signerAddressText = signerAddressSpan.textContent;
-                // Extraiem només l'adreça base, sense el text ni l'estat afegit dinàmicament
                 const currentSignerAddress = signerAddressText.split(':')[1].split('(')[0].trim(); 
 
                 const invalidateButton = li.querySelector('.invalidate-button');
@@ -1875,7 +1875,7 @@
                     }
                 }
 
-                // Reiniciar l'estat visual del botó de verificar
+                // Reiniciem el botó
                 if (verifyButton) {
                     verifyButton.textContent = 'Verificar Signatura Emmagatzemada'; 
                     verifyButton.classList.remove('valid'); 
@@ -1883,11 +1883,11 @@
                     if (existingStatus) {
                         existingStatus.remove();
                     }
-                    // Reiniciar el contingut del span del firmant al seu estat original (només l'adreça)
-                    signerAddressSpan.innerHTML = `<strong>Firmant:</strong> ${currentSignerAddress}`;
+                    // Reiniciar el contingut del span
+                    signerAddressSpan.innerHTML = `<strong>Signatari:</strong> ${currentSignerAddress}`;
                 }
 
-                // Netejar missatges d'estat del laboratori si existien
+                // Netegem laboratori
                 const existingLabInfoStatus = li.querySelector('.lab-info-status');
                 if (existingLabInfoStatus) {
                     existingLabInfoStatus.remove();
@@ -1912,9 +1912,9 @@
                 const timestampDate = new Date(parseInt(signerInfo.timestamp.toString()) * 1000); 
 
                 li.innerHTML = `
-                    <span><strong>Firmant:</strong> ${signerInfo.signer}</span>
+                    <span><strong>Signatari:</strong> ${signerInfo.signer}</span>
                     <span><strong>Data de Signatura:</strong> ${timestampDate.toLocaleString()}</span>
-                    <span><strong>Adreça d'Enviament (msg.sender):</strong> ${signerInfo.sender}</span>
+                    <span><strong>Adreça de transacció (laboratori):</strong> ${signerInfo.sender}</span>
                     <div class="action-buttons">
                         <button class="verify-button">Verificar Signatura Emmagatzemada</button>
                         <button class="invalidate-button">Invalidar Signatura</button>

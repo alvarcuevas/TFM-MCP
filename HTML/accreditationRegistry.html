@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestió de Registre d'Acreditacions (Ethers.js)</title>
+    <title>Gestió de registre d'acreditacions</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.2.0/ethers.umd.min.js" type="application/javascript"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
             margin: 20px;
-            background-color: #f4f4f4; /* Color per defecte */
+            background-color: #f4f4f4; 
             color: #333;
         }
 
@@ -20,7 +20,7 @@
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
             max-width: 800px;
             margin: 0 auto;
-            margin-bottom: 30px; /* Espai al final */
+            margin-bottom: 30px; 
         }
         h1 {
             color: #0056b3;
@@ -111,7 +111,7 @@
             display: flex;
             gap: 10px;
             margin-top: 10px;
-            flex-wrap: wrap; /* Permet que els botons s'ajusten si no hi ha espai */
+            flex-wrap: wrap; 
         }
         .status-message {
             margin-top: 8px;
@@ -131,45 +131,44 @@
             background-color: #dc3545;
         }
         .status-message.info {
-            background-color: #f8f9fa; /* Color clar per al fons */
-            color: #333; /* Text fosc */
+            background-color: #f8f9fa; 
+            color: #333; 
             border: 1px solid #dee2e6;
             word-break: break-all;
             white-space: pre-wrap;
         }
         .verified-status {
-            color: #28a745; /* Verd */
+            color: #28a745; 
             font-weight: bold;
         }
         .unverified-status {
-            color: #dc3545; /* Roig */
+            color: #dc3545; 
             font-weight: bold;
         }
         .accreditation-valid {
-            color: #28a745; /* Verd */
+            color: #28a745; 
             font-weight: bold;
         }
         .accreditation-invalid {
-            color: #dc3545; /* Roig */
+            color: #dc3545; 
             font-weight: bold;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Gestió de Registre d'Acreditacions</h1>
+        <h1>Gestió de registre d'acreditacions</h1>
 
         <div class="input-group">
-            <label for="registryContractAddress">Adreça del Contracte AccreditationRegistry:</label>
-            <input type="text" id="registryContractAddress" value="0x09298c5cd7E935835dC27a03eC453e5CE1514755">
-            <small>¡Assegura't que esta adreça siga la del teu contracte desplegat!</small>
+            <label for="registryContractAddress">Adreça del contracte AccreditationRegistry:</label>
+            <input type="text" id="registryContractAddress" value="0x602eA1eBb0aDB4113D6aDaeE139ba46DD8E82a49">
         </div>
 
         <div id="result">
             Carregant Ethers.js i esperant les teues accions...
         </div>
 
-        <h2 class="section-title">Informació del Compte Connectat</h2>
+        <h2 class="section-title">Informació del compte connectat</h2>
         <div class="input-group">
             <p>Compte actual de MetaMask: <span id="connectedAccountDisplay">No connectada</span></p>
             <p>Es Auditor: <span id="isAuditorStatus">Carregant...</span></p>
@@ -177,111 +176,111 @@
         </div>
 
 
-        <h2 class="section-title">Gestió d'Auditors</h2>
+        <h2 class="section-title">Gestió d'auditors</h2>
         <div class="input-group">
-            <label for="auditorAddressInput">Adreça de l'Auditor:</label>
+            <label for="auditorAddressInput">Adreça de l'auditor:</label>
             <input type="text" id="auditorAddressInput" placeholder="0x..." />
             <div class="action-buttons">
-                <button onclick="addAuditor()">Afegir Auditor</button>
-                <button onclick="removeAuditor()">Eliminar Auditor</button>
+                <button onclick="addAuditor()">Afegir auditor</button>
+                <button onclick="removeAuditor()">Eliminar auditor</button>
             </div>
             <div id="auditorStatus" class="status-message"></div>
         </div>
 
-        <h2 class="section-title">Gestió de Laboratoris</h2>
+        <h2 class="section-title">Gestió de laboratoris</h2>
         <div class="input-group">
-            <label for="labAddressAddInput">Adreça del Laboratori:</label>
+            <label for="labAddressAddInput">Adreça del laboratori:</label>
             <input type="text" id="labAddressAddInput" placeholder="0x..." />
-            <label for="labNameAddInput">Nom del Laboratori:</label>
-            <input type="text" id="labNameAddInput" placeholder="Nom del Laboratori" />
-            <button onclick="addLaboratory()">Afegir Laboratori</button>
+            <label for="labNameAddInput">Nom del laboratori:</label>
+            <input type="text" id="labNameAddInput" placeholder="Nom del laboratori" />
+            <button onclick="addLaboratory()">Afegir laboratori</button>
             <div id="addLabStatus" class="status-message"></div>
         </div>
 
         <div class="input-group">
-            <label for="labAddressVerifyInput">Adreça del Laboratori a Verificar/Desverificar:</label>
+            <label for="labAddressVerifyInput">Adreça del laboratori a verificar/desverificar:</label>
             <input type="text" id="labAddressVerifyInput" placeholder="0x..." />
-            <label for="labVerificationStatusSelect">Estat de Verificació:</label>
+            <label for="labVerificationStatusSelect">Estat de verificació:</label>
             <select id="labVerificationStatusSelect">
                 <option value="true">Verificat</option>
-                <option value="false">No Verificat</option>
+                <option value="false">No verificat</option>
             </select>
-            <button onclick="setLaboratoryVerificationStatus()">Establir Estat de Verificació</button>
+            <button onclick="setLaboratoryVerificationStatus()">Establir estat de verificació</button>
             <div id="verifyLabStatus" class="status-message"></div>
         </div>
 
         <div class="input-group">
-            <label for="labAddressInfoInput">Adreça del Laboratori per a informació:</label>
+            <label for="labAddressInfoInput">Adreça del laboratori per a informació:</label>
             <input type="text" id="labAddressInfoInput" placeholder="0x..." />
-            <button onclick="getLaboratoryInfo()">Obtindre Informació del Laboratori</button>
+            <button onclick="getLaboratoryInfo()">Obtindre informació del laboratori</button>
             <div id="labInfoDisplay" class="status-message info"></div>
         </div>
 
         <h2 class="section-title">Gestió de Signataris</h2>
         <div class="input-group">
-            <label for="signerNameInput">El teu Nom (per a registrar-te com a signatari):</label>
+            <label for="signerNameInput">Nom de signatari (per a registrar compte actual com a signatari):</label>
             <input type="text" id="signerNameInput" placeholder="El meu nom" />
-            <button onclick="addModSigner()">Afegir/Modificar Signatari</button>
+            <button onclick="addModSigner()">Afegir/modificar signatari</button>
             <div id="addSignerStatus" class="status-message"></div>
         </div>
 
         <div class="input-group">
-            <label for="signerAddressVerifyInput">Adreça del Signatari a Verificar/Desverificar:</label>
+            <label for="signerAddressVerifyInput">Adreça del signatari a verificar/desverificar:</label>
             <input type="text" id="signerAddressVerifyInput" placeholder="0x..." />
-            <label for="signerVerificationStatusSelect">Estat de Verificació:</label>
+            <label for="signerVerificationStatusSelect">Estat de verificació:</label>
             <select id="signerVerificationStatusSelect">
                 <option value="true">Verificat</option>
                 <option value="false">No Verificat</option>
             </select>
-            <button onclick="setSignerVerificationStatus()">Establir Estat de Verificació</button>
+            <button onclick="setSignerVerificationStatus()">Establir estat de verificació</button>
             <div id="verifySignerStatus" class="status-message"></div>
         </div>
 
-        <h2 class="section-title">Gestió d'Acreditacions</h2>
+        <h2 class="section-title">Gestió d'acreditacions</h2>
         <div class="input-group">
-            <label for="accLabAddressInput">Adreça del Laboratori:</label>
+            <label for="accLabAddressInput">Adreça del laboratori:</label>
             <input type="text" id="accLabAddressInput" placeholder="0x..." />
-            <label for="accNameInput">Nom de l'Acreditació:</label>
+            <label for="accNameInput">Nom de l'acreditació:</label>
             <input type="text" id="accNameInput" placeholder="Ex: ISO 17025" />
-            <label for="accValidFromInput">Vàlid Des de:</label>
+            <label for="accValidFromInput">Vàlid des de:</label>
             <input type="date" id="accValidFromInput" />
-            <label for="accValidUntilInput">Vàlid Fins a:</label>
+            <label for="accValidUntilInput">Vàlid fins a:</label>
             <input type="date" id="accValidUntilInput" />
-            <button onclick="addModAccreditation()">Afegir/Actualitzar Acreditació</button>
+            <button onclick="addModAccreditation()">Afegir/actualitzar acreditació</button>
             <div id="addAccreditationStatus" class="status-message"></div>
         </div>
 
         <div class="input-group">
-            <label for="revokeAccLabAddressInput">Adreça del Laboratori:</label>
+            <label for="revokeAccLabAddressInput">Adreça del laboratori:</label>
             <input type="text" id="revokeAccLabAddressInput" placeholder="0x..." />
-            <label for="revokeAccNameInput">Nom de l'Acreditació a Revocar:</label>
+            <label for="revokeAccNameInput">Nom de l'acreditació a revocar:</label>
             <input type="text" id="revokeAccNameInput" placeholder="Ex: ISO 17025" />
-            <button onclick="revokeAccreditation()">Revocar Acreditació</button>
+            <button onclick="revokeAccreditation()">Revocar acreditació</button>
             <div id="revokeAccreditationStatus" class="status-message"></div>
         </div>
 
         <div class="input-group">
-            <label for="checkAccLabAddressInput">Adreça del Laboratori:</label>
+            <label for="checkAccLabAddressInput">Adreça del laboratori:</label>
             <input type="text" id="checkAccLabAddressInput" placeholder="0x..." />
-            <label for="checkAccNameInput">Nom de l'Acreditació a Comprovar:</label>
+            <label for="checkAccNameInput">Nom de l'acreditació a comprovar:</label>
             <input type="text" id="checkAccNameInput" placeholder="Ex: ISO 17025" />
-            <button onclick="hasValidAccreditation()">Comprovar Acreditació Válida</button>
+            <button onclick="hasValidAccreditation()">Comprovar acreditació válida</button>
             <div id="checkAccreditationStatus" class="status-message info"></div>
         </div>
 
         <div class="input-group">
-            <label for="getAccDetailsLabAddressInput">Adreça del Laboratori:</label>
+            <label for="getAccDetailsLabAddressInput">Adreça del laboratori:</label>
             <input type="text" id="getAccDetailsLabAddressInput" placeholder="0x..." />
-            <label for="getAccDetailsNameInput">Nom de l'Acreditació:</label>
-            <input type="text" id="getAccDetailsNameInput" placeholder="Ex: ISO 17025" />
-            <button onclick="getAccreditationDetails()">Obtindre Detalls de l'Acreditació</button>
+            <label for="getAccDetailsNameInput">Nom de l'acreditació:</label>
+            <input type="text" id="getAccDetailsNameInput" placeholder="Ex: ISO 17025 - XXXX" />
+            <button onclick="getAccreditationDetails()">Obtindre detalls de l'acreditació</button>
             <div id="accDetailsDisplay" class="status-message info"></div>
         </div>
 
         <div class="input-group">
-            <label for="getAllAccLabAddressInput">Adreça del Laboratori:</label>
+            <label for="getAllAccLabAddressInput">Adreça del laboratori:</label>
             <input type="text" id="getAllAccLabAddressInput" placeholder="0x..." />
-            <button onclick="getAllAccreditationsForLaboratory()">Obtindre Totes les Acreditacions</button>
+            <button onclick="getAllAccreditationsForLaboratory()">Obtindre totes les acreditacions</button>
             <div id="allAccreditationsDisplay" class="status-message info"></div>
         </div>
 
@@ -876,7 +875,7 @@
         const isAuditorStatus = document.getElementById('isAuditorStatus');
         const isOwnerStatus = document.getElementById('isOwnerStatus');
 
-        // Utility function to show messages
+        // Funció genèrica per a mostrar missatges
         function showStatus(elementId, message, isError = false, isInfo = false) {
             const element = document.getElementById(elementId);
             if (!element) {
@@ -894,13 +893,13 @@
             }
         }
 
-        // Utility function for general result display
+        // Funció genèrica per a mostrar resultats
         function showGeneralResult(message, isError = false) {
             resultDiv.textContent = message;
             resultDiv.className = isError ? 'error' : '';
         }
 
-        // Initialize Ethers.js and load account status
+        // Inicialitzem el compte
         window.addEventListener('load', async () => {
             if (typeof window.ethereum !== 'undefined') {
                 provider = new ethers.providers.Web3Provider(window.ethereum);
@@ -923,11 +922,9 @@
 
                 } catch (error) {
                     showGeneralResult('Accés a MetaMask denegat. Algunes funcionalitats poden no estar disponibles.', true);
-                    console.error("User denied account access", error);
                 }
             } else {
                 showGeneralResult('No es detecta Ethereum en el navegador. Per favor, instal·la MetaMask o un altre proveïdor de Web3.', true);
-                console.error("No Ethereum provider detected.");
             }
         });
 
@@ -951,13 +948,12 @@
             } catch (error) {
                 isAuditorStatus.textContent = 'Error al carregar';
                 isOwnerStatus.textContent = 'Error al carregar';
-                console.error("Error updating account status:", error);
             }
         }
 
         async function executeTransaction(contractFunction, successMessage, statusElementId, ...args) {
             if (!signer || !connectedAccount) {
-                showStatus(statusElementId, 'Connecta el teu MetaMask primer.', true);
+                showStatus(statusElementId, 'Connecta el MetaMask primer.', true);
                 return;
             }
             if (!registryContract) {
@@ -976,7 +972,7 @@
                 showStatus(statusElementId, 'Transacció enviada. Esperant confirmació...', false);
                 await tx.wait();
                 showStatus(statusElementId, successMessage, false);
-                await updateAccountStatus(); // Refresh owner/auditor status
+                await updateAccountStatus(); // Actualitzem la informació de owner/auditor
             } catch (error) {
                 console.error(`Error executing transaction for ${contractFunction.name}:`, error);
                 let errorMessage = error.message || 'Desconegut';
@@ -991,7 +987,7 @@
             }
         }
 
-        // --- Auditor Functions ---
+        // Funcions per gestionar auditors
         async function addAuditor() {
             const auditorAddress = document.getElementById('auditorAddressInput').value.trim();
             if (!ethers.utils.isAddress(auditorAddress)) {
@@ -1020,7 +1016,7 @@
                 'Auditor eliminat amb èxit!', 'auditorStatus', auditorAddress);
         }
 
-        // --- Laboratory Functions ---
+        // Funcions per a gestionar laboratoris
         async function addLaboratory() {
             const labAddress = document.getElementById('labAddressAddInput').value.trim();
             const labName = document.getElementById('labNameAddInput').value.trim();
@@ -1079,7 +1075,7 @@
             }
         }
 
-        // --- Signer Functions ---
+        // Funcions per a gestionar signataris
         async function addModSigner() {
             const signerName = document.getElementById('signerNameInput').value.trim();
             if (!signerName) {
@@ -1093,6 +1089,7 @@
         async function setSignerVerificationStatus() {
             const signerAddress = document.getElementById('signerAddressVerifyInput').value.trim();
             const status = document.getElementById('signerVerificationStatusSelect').value === 'true';
+            console.log("STATUS", status);
             if (!ethers.utils.isAddress(signerAddress)) {
                 showStatus('verifySignerStatus', 'Adreça de signatari invàlida.', true);
                 return;
@@ -1105,7 +1102,7 @@
                 'Estat de verificació del signatari actualitzat!', 'verifySignerStatus', signerAddress, status);
         }
 
-        // --- Accreditation Functions ---
+        // Funcions per a gestionar acreditacions
         async function addModAccreditation() {
             const labAddress = document.getElementById('accLabAddressInput').value.trim();
             const accName = document.getElementById('accNameInput').value.trim();
