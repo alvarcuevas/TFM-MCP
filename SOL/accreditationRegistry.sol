@@ -10,6 +10,13 @@ contract AccreditationRegistry is Ownable {
         uint256 validUntil; //timestamp
     }
 
+    struct Signer {
+        string name; // Nom de la persona
+        uint256 timestamp;
+        address signerAddress;
+        bool isVerified; // Si un auditor ha verificat a la persona.
+    }
+
     struct Laboratory {
         string name;
         bool isVerified;
@@ -24,6 +31,9 @@ contract AccreditationRegistry is Ownable {
     // Laboratoris
     mapping(address => Laboratory) public laboratories;
 
+    // Signers
+    mapping(address => Signer) public signers;
+
     // Auditors
     mapping(address => bool) public isAuditor;
 
@@ -32,6 +42,8 @@ contract AccreditationRegistry is Ownable {
     event LaboratoryVerified(address indexed laboratoryAddress, bool isVerified);
     event AuditorAdded(address indexed auditorAddress);
     event AuditorRemoved(address indexed auditorAddress);
+    event SignerAddMod(address indexed signerAddress, string name);
+    event SignerVerified(address indexed SignerAddress, bool status);
     event AccreditationAdded(address indexed laboratoryAddress, bytes32 indexed accreditationHash, string accreditationName);
     event AccreditationUpdated(address indexed laboratoryAddress, bytes32 indexed accreditationHash, string accreditationName);
     event AccreditationRevoked(address indexed laboratoryAddress, bytes32 indexed accreditationHash);
@@ -47,99 +59,123 @@ contract AccreditationRegistry is Ownable {
 
     /**
     * @dev Afegir una adreça com auditor. Només owner pot afegir auditors.
-    * @param _auditorAddress Adreça a afegir com auditor.
+    * @param auditorAddress Adreça a afegir com auditor.
     */
-    function addAuditor(address _auditorAddress) external onlyOwner {
-        require(_auditorAddress != address(0), "Invalid address");
-        require(!isAuditor[_auditorAddress], "This address is already a auditor");
-        isAuditor[_auditorAddress] = true;
-        emit AuditorAdded(_auditorAddress);
+    function addAuditor(address auditorAddress) external onlyOwner {
+        require(auditorAddress != address(0), "Invalid address");
+        require(!isAuditor[auditorAddress], "This address is already a auditor");
+        isAuditor[auditorAddress] = true;
+        emit AuditorAdded(auditorAddress);
     }
 
     /**
     * @dev Elimina un auditor. Només owner pot eliminar auditors.
-    * @param _auditorAddress Adreça a eliminar
+    * @param auditorAddress Adreça a eliminar
     */
-    function removeAuditor(address _auditorAddress) external onlyOwner {
-        require(_auditorAddress != address(0), "Invalid address");
-        require(isAuditor[_auditorAddress], "This address is not a valid auditor");
-        isAuditor[_auditorAddress] = false;
-        emit AuditorRemoved(_auditorAddress);
+    function removeAuditor(address auditorAddress) external onlyOwner {
+        require(auditorAddress != address(0), "Invalid address");
+        require(isAuditor[auditorAddress], "This address is not a valid auditor");
+        isAuditor[auditorAddress] = false;
+        emit AuditorRemoved(auditorAddress);
     }
 
     /**
     * @dev Afegir un nou laboratori. Qualsevol pot afegir laboratoris.
-    * @param _laboratoryAddress La adreça del laboratori.
-    * @param _name El nom del laboratori.
+    * @param laboratoryAddress La adreça del laboratori.
+    * @param name El nom del laboratori.
     */
-    function addLaboratory(address _laboratoryAddress, string memory _name) external {
-        require(_laboratoryAddress != address(0), "Invalid address");
-        require(bytes(laboratories[_laboratoryAddress].name).length == 0, "This address is already registered");
+    function addLaboratory(address laboratoryAddress, string memory name) external {
+        require(laboratoryAddress != address(0), "Invalid address");
+        require(bytes(laboratories[laboratoryAddress].name).length == 0, "This address is already registered");
         
-        laboratories[_laboratoryAddress].name = _name;
-        laboratories[_laboratoryAddress].isVerified = false; // No verificat d'inici.
+        laboratories[laboratoryAddress].name = name;
+        laboratories[laboratoryAddress].isVerified = false; // No verificat d'inici.
         
-        emit LaboratoryAdded(_laboratoryAddress, _name);
+        emit LaboratoryAdded(laboratoryAddress, name);
     }
 
     /**
     * @dev Permet verificar o desverificar un laboratori.
-    * @param _laboratoryAddress L'adreça del laboratori.
-    * @param _status L'estat de la verificació: true per verificat, false per no verificat.
+    * @param laboratoryAddress L'adreça del laboratori.
+    * @param status L'estat de la verificació: true per verificat, false per no verificat.
     */
-    function setLaboratoryVerificationStatus(address _laboratoryAddress, bool _status) external onlyAuditor {
-        require(bytes(laboratories[_laboratoryAddress].name).length > 0, "This address is not a valid laboratory");
-        laboratories[_laboratoryAddress].isVerified = _status;
-        emit LaboratoryVerified(_laboratoryAddress, _status);
+    function setLaboratoryVerificationStatus(address laboratoryAddress, bool status) external onlyAuditor {
+        require(bytes(laboratories[laboratoryAddress].name).length > 0, "This address is not a valid laboratory");
+        laboratories[laboratoryAddress].isVerified = status;
+        emit LaboratoryVerified(laboratoryAddress, status);
     }
 
     /**
     * @dev Consulta la informació d'un laboratori
-    * @param _laboratoryAddress Adreça del laboratori
+    * @param laboratoryAddress Adreça del laboratori
     * @return name Nom del laboratori
     * @return isVerified Estat de la verificació del laboratori
     * @return exists Indica si el laboratori s'ha registrat
     */
-    function getLaboratoryInfo(address _laboratoryAddress) external view returns (string memory name, bool isVerified, bool exists) {
-        exists = (bytes(laboratories[_laboratoryAddress].name).length > 0);
+    function getLaboratoryInfo(address laboratoryAddress) external view returns (string memory name, bool isVerified, bool exists) {
+        exists = (bytes(laboratories[laboratoryAddress].name).length > 0);
         if (exists) {
-            name = laboratories[_laboratoryAddress].name;
-            isVerified = laboratories[_laboratoryAddress].isVerified;
+            name = laboratories[laboratoryAddress].name;
+            isVerified = laboratories[laboratoryAddress].isVerified;
         }
         return (name, isVerified, exists);
     }
+
+    /**
+    * @dev Afegir una nova persona que signa. Qualsevol pot afegir el seu nom. Si ja existeix, es modifica.
+    * @param name El nom de la persona.
+    */
+    function addModSigner(string memory name) external {        
+        signers[msg.sender].name = name;
+        signers[msg.sender].timestamp = block.timestamp;
+        signers[msg.sender].isVerified = false; // No verificat d'inici.
+        signers[msg.sender].signerAddress = msg.sender;
+        emit SignerAddMod(msg.sender, name);
+    }
+
+    /**
+    * @dev Permet verificar o desverificar un signatari.
+    * @param SignerAddress L'adreça del signatari.
+    * @param status L'estat de la verificació: true per verificat, false per no verificat.
+    */
+    function setSignerVerificationStatus(address SignerAddress, bool status) external onlyAuditor {
+        require(bytes(signers[SignerAddress].name).length > 0, "This address is not registered");
+        laboratories[SignerAddress].isVerified = status;
+        emit SignerVerified(SignerAddress, status);
+    }
+
     
     /**
     * @dev Afegeix o actualitza una acreditació a un laboratori específic. Només els auditors poden gastar aquesta funció. També actualitza acreditacions.
-    * @param _laboratoryAddress Adreça del laboratori
-    * @param _accreditationName Nom de la acreditació
-    * @param _validFrom Timestamp de l'inici de validesa de l'acreditació
-    * @param _validUntil Timestamp de final de validasa de l'acreditació
+    * @param laboratoryAddress Adreça del laboratori
+    * @param accreditationName Nom de la acreditació
+    * @param validFrom Timestamp de l'inici de validesa de l'acreditació
+    * @param validUntil Timestamp de final de validasa de l'acreditació
     */
-    function addOrUpdateAccreditation(address _laboratoryAddress, string memory _accreditationName, uint256 _validFrom, uint256 _validUntil) external onlyAuditor {
-        require(bytes(laboratories[_laboratoryAddress].name).length > 0, "This address is not a valid laboratory");
-        require(_validFrom < _validUntil, "validFrom must be lower than validUntil");
+    function addModAccreditation(address laboratoryAddress, string memory accreditationName, uint256 validFrom, uint256 validUntil) external onlyAuditor {
+        require(bytes(laboratories[laboratoryAddress].name).length > 0, "This address is not a valid laboratory");
+        require(validFrom < validUntil, "validFrom must be lower than validUntil");
         
-        bytes32 accreditationHash = keccak256(abi.encode(_accreditationName));
-        Laboratory storage lab = laboratories[_laboratoryAddress];
+        bytes32 accreditationHash = keccak256(abi.encode(accreditationName));
+        Laboratory storage lab = laboratories[laboratoryAddress];
 
         bool exists = lab.accreditationsByHash[accreditationHash].validFrom != 0;
 
         // Actualitza el mapping per accedir ràpidament
-        lab.accreditationsByHash[accreditationHash] = Accreditation(_accreditationName, _validFrom, _validUntil);
+        lab.accreditationsByHash[accreditationHash] = Accreditation(accreditationName, validFrom, validUntil);
 
         if (!exists) {
             // Acreditació nova
-            lab.accreditationList.push(Accreditation(_accreditationName, _validFrom, _validUntil));
+            lab.accreditationList.push(Accreditation(accreditationName, validFrom, validUntil));
             lab.accreditationExistsInList[accreditationHash] = true;
-            emit AccreditationAdded(_laboratoryAddress, accreditationHash, _accreditationName);
+            emit AccreditationAdded(laboratoryAddress, accreditationHash, accreditationName);
         } else {
             // Actualització d'acreditació
             for (uint i = 0; i < lab.accreditationList.length; i++) {
                 if (keccak256(abi.encode(lab.accreditationList[i].name)) == accreditationHash) {
-                    lab.accreditationList[i].validFrom = _validFrom;
-                    lab.accreditationList[i].validUntil = _validUntil;
-                    emit AccreditationUpdated(_laboratoryAddress, accreditationHash, _accreditationName);
+                    lab.accreditationList[i].validFrom = validFrom;
+                    lab.accreditationList[i].validUntil = validUntil;
+                    emit AccreditationUpdated(laboratoryAddress, accreditationHash, accreditationName);
                     return; // No cal continuar buscant
                 }
             }
@@ -148,14 +184,14 @@ contract AccreditationRegistry is Ownable {
 
     /**
     * @dev Revoca una acreditació d'un laboratori. Només auditors.
-    * @param _laboratoryAddress L'adreça del laboratori
-    * @param _accreditationName Nom de l'acreditació a revocar
+    * @param laboratoryAddress L'adreça del laboratori
+    * @param accreditationName Nom de l'acreditació a revocar
     */
-    function revokeAccreditation(address _laboratoryAddress, string memory _accreditationName) external onlyAuditor {
-        require(bytes(laboratories[_laboratoryAddress].name).length > 0, "This address is not a valid laboratory");
+    function revokeAccreditation(address laboratoryAddress, string memory accreditationName) external onlyAuditor {
+        require(bytes(laboratories[laboratoryAddress].name).length > 0, "This address is not a valid laboratory");
 
-        bytes32 accreditationHash = keccak256(abi.encode(_accreditationName));
-        Laboratory storage lab = laboratories[_laboratoryAddress];
+        bytes32 accreditationHash = keccak256(abi.encode(accreditationName));
+        Laboratory storage lab = laboratories[laboratoryAddress];
 
         require(lab.accreditationsByHash[accreditationHash].validFrom != 0, "This accreditation is not in the selected laboratory");
 
@@ -171,33 +207,33 @@ contract AccreditationRegistry is Ownable {
                 break;
             }
         }
-        emit AccreditationRevoked(_laboratoryAddress, accreditationHash);
+        emit AccreditationRevoked(laboratoryAddress, accreditationHash);
     }
 
     /**
     * @dev Comprova si un laboratori concret té una acreditació indicada
-    * @param _laboratoryAddress Adreça del laboratori
-    * @param _accreditationName Nom de l'acreditació
+    * @param laboratoryAddress Adreça del laboratori
+    * @param accreditationName Nom de l'acreditació
     * @return bool True si existeix eixa acreditació per eixe laboratori
     */
-    function hasValidAccreditation(address _laboratoryAddress, string memory _accreditationName) external view returns (bool) {
-        bytes32 accreditationHash = keccak256(abi.encode(_accreditationName));
-        Accreditation storage acc = laboratories[_laboratoryAddress].accreditationsByHash[accreditationHash];
+    function hasValidAccreditation(address laboratoryAddress, string memory accreditationName) external view returns (bool) {
+        bytes32 accreditationHash = keccak256(abi.encode(accreditationName));
+        Accreditation storage acc = laboratories[laboratoryAddress].accreditationsByHash[accreditationHash];
         return (acc.validFrom != 0 && acc.validFrom <= block.timestamp && acc.validUntil >= block.timestamp);
     }
 
     /**
     * @dev Recuperar els detalls d'una acreditació concreta d'un laboratori
-    * @param _laboratoryAddress Adreça del laboratori
-    * @param _accreditationName Nom de l'acreditació
+    * @param laboratoryAddress Adreça del laboratori
+    * @param accreditationName Nom de l'acreditació
     * @return name Nom de l'acreditació
     * @return validFrom Timestamp d'inici de validesa
     * @return validUntil Timestamp de fi de validesa
     * @return exists True si existeix eixa acreditació per eixe laboratori
     */
-    function getAccreditationDetails(address _laboratoryAddress, string memory _accreditationName) external view returns (string memory name, uint256 validFrom, uint256 validUntil, bool exists) {
-        bytes32 accreditationHash = keccak256(abi.encode(_accreditationName));
-        Accreditation storage acc = laboratories[_laboratoryAddress].accreditationsByHash[accreditationHash];
+    function getAccreditationDetails(address laboratoryAddress, string memory accreditationName) external view returns (string memory name, uint256 validFrom, uint256 validUntil, bool exists) {
+        bytes32 accreditationHash = keccak256(abi.encode(accreditationName));
+        Accreditation storage acc = laboratories[laboratoryAddress].accreditationsByHash[accreditationHash];
 
         // Una acreditación existeis només si 'validFrom' no és zero
         exists = (acc.validFrom != 0);
@@ -211,10 +247,10 @@ contract AccreditationRegistry is Ownable {
 
     /**
     * @dev Retorna tota la informació de totes les acreditacions d'un laboratori concret
-    * @param _laboratoryAddress Adreça del laboratori
+    * @param laboratoryAddress Adreça del laboratori
     * @return Array de structs Accreditation amb tots els detalls
     */
-    function getAllAccreditationsForLaboratory(address _laboratoryAddress) external view returns (Accreditation[] memory) {
-        return laboratories[_laboratoryAddress].accreditationList;
+    function getAllAccreditationsForLaboratory(address laboratoryAddress) external view returns (Accreditation[] memory) {
+        return laboratories[laboratoryAddress].accreditationList;
     }
 }

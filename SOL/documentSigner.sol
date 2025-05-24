@@ -117,10 +117,10 @@ contract DocumentSigner is Ownable, EIP712("DocumentSigner", "1.0.0") {
         require(signer == recoveredSigner, "Signature error.");
         nonce[signer]++;
         delete documentSignatures[documentHash][signer];
-        // Eliminem al signatari de la llista
+        // Remove signer from the list
         for (uint256 i = 0; i < signersForDocument[documentHash].length; i++) {
             if (signersForDocument[documentHash][i].signer == signer) {
-                // Moguem a la llista per evitar el forat de l'eliminat
+                // Shift elements to fill the gap
                 for (uint256 j = i; j < signersForDocument[documentHash].length - 1; j++) {
                     signersForDocument[documentHash][j] = signersForDocument[documentHash][j + 1];
                 }
