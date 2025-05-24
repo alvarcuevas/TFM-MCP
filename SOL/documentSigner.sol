@@ -6,26 +6,41 @@ import "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract DocumentSigner is Ownable, EIP712("DocumentSigner", "1.0.0") {
+
+    // Estructura per a la informació detallada de cada signatura
     struct SignatureInfo {
-        address signer;
-        uint256 timestamp;
-        bytes signature;
-        uint32 nonce;
-        address sender;
+        address signer; // Qui signa (signatari)
+        uint256 timestamp; // Quan es signa 
+        bytes signature; // Signatura guardada
+        uint32 nonce; // Quin nonce s'ha utilitzat per eixa signatura
+        address sender; // Qui ha fet la transacció (laboratori)
     }
+
+    //Estructrua per a tindre una llista ràpida de signants per document
     struct SignerInfo {
-        address signer;
-        uint256 timestamp;
-        address sender;
+        address signer; // Qui signa (signatari)
+        uint256 timestamp; // Quan es signa
+        address sender; // Qui ha fet la transacció (laboratori)
     }
+
+    // Mapping per a cada document i hash
     mapping(bytes32 => mapping(address => SignatureInfo)) public documentSignatures;
+    // Mapping amb llista de signataris per a cada document
     mapping(bytes32 => SignerInfo[]) public signersForDocument;
+    // Mapping amb els nonces següents de cada signatari.
     mapping(address => uint32) public nonce;
 
     event DocumentSigned(bytes32 documentHash, address signer, uint256 timestamp, bytes signature);
 
+    // El contracte hereta de Ownable i també de EIP712
     constructor() Ownable(msg.sender) {}
 
+    /**
+    * @dev Funció per a signar un document per un signatari concret.
+    * @param documentHash El hash del document, en keccak256.
+    * @param signer Adreça del signatari. No té perquè ser la de qui fa la transacció.
+    * @param signature La signatura, en format ECDSA.
+    */
     function signDocument(
         bytes32 documentHash,
         address signer,
@@ -45,7 +60,7 @@ contract DocumentSigner is Ownable, EIP712("DocumentSigner", "1.0.0") {
         nonce[signer]++;
         documentSignatures[documentHash][signer] = SignatureInfo(signer, block.timestamp, signature, currentNonce, msg.sender);
 
-        // Add signer to the list if not already present
+        // Afegir signatari a la llista si no està ja
         bool alreadySigned = false;
         for (uint256 i = 0; i < signersForDocument[documentHash].length; i++) {
             if (signersForDocument[documentHash][i].signer == signer) {
@@ -60,6 +75,13 @@ contract DocumentSigner is Ownable, EIP712("DocumentSigner", "1.0.0") {
         emit DocumentSigned(documentHash, signer, block.timestamp, signature);
     }
 
+    /**
+    * @dev Funció per a verificar una signatura, enviant altra vegada la signatura.
+    * @param documentHash El hash del document, en keccak256.
+    * @param expectedSigner Adreça del signatari a verificar (i que ja es signa).
+    * @param signature La signatura, en format ECDSA.
+    * @return True si la signatura és correcta, i false altrament.
+    */
     function verifySignature(
         bytes32 documentHash,
         address expectedSigner,
@@ -78,6 +100,12 @@ contract DocumentSigner is Ownable, EIP712("DocumentSigner", "1.0.0") {
         return recoveredSigner == expectedSigner;
     }
 
+    /**
+    * @dev Funció per a verificar una signatura, gastant l'emmagatzemada.
+    * @param documentHash El hash del document, en keccak256.
+    * @param expectedSigner Adreça del signatari a verificar.
+    * @return True si la signatura és correcta, i false altrament.
+    */
     function verifyStoredSignature(
         bytes32 documentHash,
         address expectedSigner
@@ -95,14 +123,40 @@ contract DocumentSigner is Ownable, EIP712("DocumentSigner", "1.0.0") {
         return recoveredSigner == expectedSigner;
     }
 
+    /**
+    * @dev Funció per a verificar si existeix una signatura.
+    * @param documentHash El hash del document, en keccak256.
+    * @param signer Adreça del signatari.
+    * @return True si existeix la signatura, false altrament.
+    */
     function isSignedBy(bytes32 documentHash, address signer) external view returns (bool) {
         return documentSignatures[documentHash][signer].signer == signer;
     }
 
+    /**
+    * @dev Funció per a obtindre la signatura d'un document emesa per qui fa la petició.
+    * @param documentHash El hash del document, en keccak256.
+    * @return La signatura guardada.
+    */
+    function getSignature(bytes32 documentHash) external view returns (SignatureInfo memory) {
+        return documentSignatures[documentHash][msg.sender];
+    }
+
+    /**
+    * @dev Funció per a obtindre totes les signatures d'un document.
+    * @param documentHash El hash del document, en keccak256.
+    * @return La llista de signatures del document.
+    */
     function getSigners(bytes32 documentHash) external view returns (SignerInfo[] memory) {
         return signersForDocument[documentHash];
     }
 
+    /**
+    * @dev Funció per a eliminar una signatura d'un document.
+    * @param documentHash El hash del document, en keccak256.
+    * @param signer Adreça del signatari a eliminar.
+    * @param signature La signatura del procés d'eliminació, en format ECDSA.
+    */
     function invalidateSignature(bytes32 documentHash, address signer, bytes memory signature) external {
         require(documentSignatures[documentHash][signer].signer != address(0), "Signature not exists.");
         uint32 currentNonce = nonce[signer];
@@ -117,10 +171,10 @@ contract DocumentSigner is Ownable, EIP712("DocumentSigner", "1.0.0") {
         require(signer == recoveredSigner, "Signature error.");
         nonce[signer]++;
         delete documentSignatures[documentHash][signer];
-        // Remove signer from the list
+        // Eliminar signatari de la llista
         for (uint256 i = 0; i < signersForDocument[documentHash].length; i++) {
             if (signersForDocument[documentHash][i].signer == signer) {
-                // Shift elements to fill the gap
+                // Moure elements per a que no quede el forat a la llista
                 for (uint256 j = i; j < signersForDocument[documentHash].length - 1; j++) {
                     signersForDocument[documentHash][j] = signersForDocument[documentHash][j + 1];
                 }
@@ -130,10 +184,14 @@ contract DocumentSigner is Ownable, EIP712("DocumentSigner", "1.0.0") {
         }
     }
 
+    /**
+    * @dev Funció per a eliminar totes les signatures d'un document. Només l'owner.
+    * @param documentHash El hash del document, en keccak256.
+    */
     function invalidateAllSignatures(bytes32 documentHash) external onlyOwner {
         address[] memory signers = new address[](signersForDocument[documentHash].length);
         for (uint256 i = 0; i < signersForDocument[documentHash].length; i++) {
-            signers[i] = signersForDocument[documentHash][i].signer; // Asumo que SignerInfo.signer es la dirección relevante
+            signers[i] = signersForDocument[documentHash][i].signer;
         }
 
         for (uint256 i = 0; i < signers.length; i++) {

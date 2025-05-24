@@ -140,7 +140,7 @@ contract AccreditationRegistry is Ownable {
     */
     function setSignerVerificationStatus(address SignerAddress, bool status) external onlyAuditor {
         require(bytes(signers[SignerAddress].name).length > 0, "This address is not registered");
-        laboratories[SignerAddress].isVerified = status;
+        signers[SignerAddress].isVerified = status;
         emit SignerVerified(SignerAddress, status);
     }
 
