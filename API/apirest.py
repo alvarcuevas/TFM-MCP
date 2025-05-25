@@ -84,7 +84,7 @@ if not w3.is_connected():
 account = Account.from_key(private_key) 
 
 contract = w3.eth.contract(address=CONTRACT_ADDRESS, abi=CONTRACT_ABI)
-print(f"Conectado al contrato en la dirección: {CONTRACT_ADDRESS}")
+print(f"Connectat al contracte a l'adreça: {CONTRACT_ADDRESS}")
 
 # API REST Flask
 app = Flask(__name__)
@@ -105,7 +105,6 @@ def sign_document_contract():
     Espera un JSON amb els atributs 'document_hash', 'signer_address', i 'signature' en el mateix format que el contracte.
     """
     data = request.get_json()
-    print("XXXX", data)
     if not data:
         return jsonify({"error": "Payload JSON buit o no vàlid"}), 400
 
