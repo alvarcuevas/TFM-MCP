@@ -250,7 +250,6 @@ async function step3_sendSignTransaction() {
 
     try {
         if (currentMode === 'solitary') {
-            console.log("ADDR2", signerAddressEIP712);
             const contractWithTxSigner = new ethers.Contract(contractAddress, DOCUMENT_SIGNER_ABI, signer);
             const tx = await contractWithTxSigner.signDocument(
                 signingDocHash,
@@ -262,7 +261,6 @@ async function step3_sendSignTransaction() {
             showSigningStatus('Document signat amb èxit a la blockchain!', false);
 
         } else {
-            console.log("ADDR", signerAddressEIP712);
             const apiEndpoint = 'http://127.0.0.1:8888/sign_document_contract';
             const payload = {
                 document_hash: signingDocHash,
@@ -404,7 +402,7 @@ async function verifyStoredSignerSignature(signerAddress, buttonElement) {
                         signerSpan.innerHTML = `<strong>Signatari:</strong> ${signerAddress} <span class="${nameClass}">(${signerName}${isSignerVerified ? ' - Verificat' : ' - No Verificat'})</span>`;
                     } else {
                         // Si no hi ha nom de signer al registre o el signer no existeix
-                        signerSpan.innerHTML = `<strong>Signatari:</strong> ${signerAddress} <span class="signer-name-unverified">(Signer no registrat/no verificat)</span>`;
+                        signerSpan.innerHTML = `<strong>Signatari:</strong> ${signerAddress} <span class="signer-name-unverified">(Signatari no registrat i no verificat)</span>`;
                     }
                 } catch (signerError) {
                     console.warn(`No s'ha pogut obtenir informació detallada del signer (${signerAddress}) des d'AccreditationRegistry:`, signerError);
