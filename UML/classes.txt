@@ -3,13 +3,27 @@ package "Sistema de Signatura i Acreditació Blockchain" {
   class Laboratori {
     +clauPublica: String
     +clauPrivada: String
-    +registrarAcreditacio(acreditacio: Acreditacio): IDTransaccio
-    +signarDocument(document: Document): SignaturaBlockchain
-  }
+    +nom: String
+    +registrarSignatura(document: Document, signatura: Signatura, nonce: Integer): IDTransaccio
+    +anularSignatura(document: Document, signatura: Signatura, nonce: Integer): IDTransaccio
+  }   
 
-  class UsuariVerificador {
-    +verificarDocument(document: Document, signaturaBlockchain: SignaturaBlockchain, clauPublicaLaboratori: String): boolean
-    +consultarAcreditacions(clauPublicaLaboratori: String): List<AcreditacioBlockchain>
+  class Usuari {
+    +clauPublica: String
+    +clauPrivada: String
+    +nom: String
+    +isVerified: Boolean
+    +isAuditor: Boolean
+    +nextNonce: Integer
+    +verificarDocument(document: Document, clauSign: String): Boolean
+    +consultarAcreditacions(clauPublicaLaboratori: String): List<Acreditació>
+    +registrarAcreditacio(acreditacio: Acreditacio): IDTransaccio
+    +anularAcreditacio(acreditacio: Acreditacio): IDTransaccio
+    +signarDocument(hash: Document, nonce: Integer): Signatura
+    +verificarLaboratori(clauPublicaLaboratori: String, verificat Boolean)
+    +verificarUsuari(clauPublicaUsuari: String, verificat Boolean)
+    +afegirSignatura(hash: Document, signatura: Signatura): IDTransaccio
+    +anularSignatura(hash: Document, signatura: Signatura): IDTransaccio
   }
 
   class Document {
@@ -17,69 +31,89 @@ package "Sistema de Signatura i Acreditació Blockchain" {
     +contingut: byte[]
     +calcularHash(): String
   }
-
-  class SignaturaBlockchain {
+  
+  struct dadesSignades {
     +hashDocument: String
-    +valorSignatura: String
-    +clauPublicaSignant: String
-    +timestamp: DateTime
-    +IDTransaccio: String
-  }
-
-  class Acreditacio {
-    +identificador: String
-    +nom: String
-    +descripcio: String
-    +dataEmissio: DateTime
-    +entitatEmissora: String
-    +hashReferenciaBlockchain: String
-  }
-
-  class AcreditacioBlockchain {
-    +clauPublicaLaboratori: String
-    +hashAcreditacio: String
-    +valorSignatura: String
-    +timestamp: DateTime
-    +IDTransaccio: String
+    +signatura: byte[]
   }
 
   enum TipusDocument {
     +PDF
     +DadesProcessables
-    +ResultatParcial
   }
-
-  Laboratori --* Document : Signa >
-  Laboratori "1" -- "*" Acreditacio : Té >
-  SignaturaBlockchain --* Document : Signa (via hash) >
-  AcreditacioBlockchain --* Laboratori : Acredita >
-
-  UsuariVerificador ..> Document : Verifica
-  UsuariVerificador ..> SignaturaBlockchain : Verifica
-  UsuariVerificador ..> Laboratori : Consulta acreditacions de
-  UsuariVerificador ..> AcreditacioBlockchain : Consulta
-
-  Document -- TipusDocument : És de tipus >
+  
+  
 }
 
 package "Blockchain" {
   class RegistreSignatures {
-    +IDTransaccio: String (PK)
-    +hashDocument: String
-    +valorSignatura: String
-    +clauPublicaSignant: String
-    +timestamp: DateTime
+    +IDContracte: String 
+    verificarSignatura(hash: Document): Boolean
+    afegirSignatura(hash: Document, signatura: Signatura, clauLab: String, clauSign: String): IDTransaccio
+    anularSignatura(hash: Document, signatura: Signatura, clauLab: String, clauSign: String): IDTransaccio
+    
+    
   }
 
-  class RegistreAcreditacionsBlockchain {
-    +IDTransaccio: String (PK)
+  class RegistreAcreditacions {
+    +IDContracte: String 
+    +consultarAcreditacions(clauLab: String): List<Acreditació>
+    +registrarAcreditacio(clauLab: String, acreditacio: Acreditacio): Boolean
+    +anularAcreditacio(clauLab: String, acreditacio: Acreditacio): Boolean
+    +verificarLaboratori(clauLab: String, verificat Boolean) : Boolean
+    +verificarUsuari(clauUsuari: String, verificat Boolean): Boolean
+  }
+  
+  struct Signatura {
+    +IDTransaccio: String
+    +hashDocument: String 
+    +valorSignatura: String
+    +clauPublicaSignant: String 
+    +timestamp: DateTime
+    +nonce: Integer
+  }    
+  
+  struct Acreditació {
+    +IDTransaccio: String 
+    +nom: String 
+    +clauPublicaLab: String 
+    +valorSignatura: String
+    +timestamp: DateTime 
+    +iniciValidesa: DateTime
+    +fiValidesa: DateTime
+  }
+  
+  struct LaboratoriRegistrat {
     +clauPublicaLaboratori: String
-    +hashAcreditacio: String
-    +valorSignatura: String
-    +timestamp: DateTime
+    +nom: String
+    +isVerified: Boolean
+  }
+  
+  struct Signatari {
+    +clauPublicaUsuari: String
+    +nom: String
+    +isVerified: Boolean
+    +nextNonece: Integer
   }
 
-  RegistreSignatures -- SignaturaBlockchain : <<mapsTo>>
-  RegistreAcreditacionsBlockchain -- AcreditacioBlockchain : <<mapsTo>>
-}
+}    
+
+RegistreSignatures -- Signatura : conté
+RegistreAcreditacions -- Acreditació : conté
+RegistreAcreditacions -- LaboratoriRegistrat : conté
+RegistreAcreditacions -- Signatari : conté
+Usuari --* RegistreAcreditacions : Afegeix/Anul·la acreditació >
+Usuari ..> RegistreAcreditacions : Consulta
+Usuari ..> RegistreSignatures : Consulta
+
+Usuari --* RegistreAcreditacions : Verifica signatari / Laboratori >
+Usuari --* Laboratori : Envia petició signatura / anul·lació >
+Laboratori --* RegistreSignatures : Afegeix/Anul·la signatura >
+Usuari --* RegistreSignatures : Afegeix/Anul·la signatura >
+
+Usuari --* Document : Demana hash >
+Usuari --* dadesSignades : Genera >
+dadesSignades --* Usuari : Obté >
+Document --* Usuari : hash >
+Document -- TipusDocument : És de tipus >
 @enduml
