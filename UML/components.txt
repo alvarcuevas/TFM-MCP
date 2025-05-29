@@ -1,8 +1,7 @@
 @startuml
+actor [Usuari/Auditor]
 package "Sistema de Signatura i Acreditació Blockchain" {
-  [Laboratori]
-  [Usuari/Verificador]
-
+  entity [Laboratori]
   package "Component de Signatura de Documents" {
     [Generador de Hash]
     [Signador de Documents]
@@ -10,7 +9,6 @@ package "Sistema de Signatura i Acreditació Blockchain" {
   }
 
   package "Component de Verificació de Documents" {
-    [Recuperador de Hash de la Blockchain]
     [Verificador de Signatura]
     [Calculador de Hash]
   }
@@ -18,39 +16,33 @@ package "Sistema de Signatura i Acreditació Blockchain" {
   package "Component de Gestió d'Acreditacions" {
     [Registre d'Acreditacions a la Blockchain]
     [Consulta d'Acreditacions a la Blockchain]
-    [Emmagatzematge d'Acreditacions (Local/Distribuït)]
   }
-
-  [Laboratori] -- [Generador de Hash]
-  [Laboratori] -- [Signador de Documents]
+     
+  [Usuari/Auditor] --> [Generador de Hash]: Utilitza
+  [Laboratori] --> [Registre a la Blockchain]: Utilitza
   [Generador de Hash] --> [Signador de Documents] : Utilitza
   [Signador de Documents] --> [Registre a la Blockchain] : Utilitza
 
-  [Usuari/Verificador] -- [Recuperador de Hash de la Blockchain]
-  [Usuari/Verificador] -- [Verificador de Signatura]
-  [Usuari/Verificador] -- [Calculador de Hash]
-  [Recuperador de Hash de la Blockchain] --> [Verificador de Signatura] : Utilitza
+  [Usuari/Auditor] --> [Verificador de Signatura]
+  [Usuari/Auditor] --> [Calculador de Hash]
   [Calculador de Hash] --> [Verificador de Signatura] : Utilitza
+    
+  [Usuari/Auditor] --> [Registre d'Acreditacions a la Blockchain]
+  [Usuari/Auditor] --> [Consulta d'Acreditacions a la Blockchain]
+  [Usuari/Auditor] --> [Laboratori]: utilitza
 
-  [Laboratori] -- [Registre d'Acreditacions a la Blockchain]
-  [Usuari/Verificador] -- [Consulta d'Acreditacions a la Blockchain]
-  [Registre d'Acreditacions a la Blockchain] --> [Emmagatzematge d'Acreditacions (Local/Distribuït)] : Utilitza
-  [Consulta d'Acreditacions a la Blockchain] --> [Emmagatzematge d'Acreditacions (Local/Distribuït)] : Consulta
-
-  [Laboratori] -- [Component de Signatura de Documents]
-  [Laboratori] -- [Component de Gestió d'Acreditacions]
-
-  [Usuari/Verificador] -- [Component de Verificació de Documents]
-  [Usuari/Verificador] -- [Component de Gestió d'Acreditacions]
 }
 
 node "Blockchain" {
   [Registre de Documents Signats]
   [Registre d'Acreditacions]
+  [Comprovació de Signatures]
 } 
 
-[Registre a la Blockchain] --> [Registre de Documents Signats] : Interactua
-[Recuperador de Hash de la Blockchain] --> [Registre de Documents Signats] : Interactua
-[Registre d'Acreditacions a la Blockchain] --> [Registre d'Acreditacions] : Interactua
-[Consulta d'Acreditacions a la Blockchain] --> [Registre d'Acreditacions] : Interactua
+[Registre a la Blockchain] --> [Registre de Documents Signats] : Transacció
+[Registre d'Acreditacions a la Blockchain] --> [Registre d'Acreditacions] : Transacció
+[Consulta d'Acreditacions a la Blockchain] --> [Registre d'Acreditacions] : Transacció
+[Verificador de Signatura] --> [Registre de Documents Signats]: Transacció
+[Registre de Documents Signats] --> [Comprovació de Signatures]: utilitza
+[Registre d'Acreditacions] --> [Comprovació de Signatures]: utilitza
 @enduml

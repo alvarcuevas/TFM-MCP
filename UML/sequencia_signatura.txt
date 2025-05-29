@@ -1,22 +1,29 @@
 @startuml
+actor Usuari
+participant Document
 participant Laboratori
-participant "Generador de Hash" as HashGen
-participant "Signador de Documents" as Signador
-participant "Registre a la Blockchain" as BlockchainReg
-participant Blockchain
+control Blockchain
+participant RegistreSignatures
+     
+Usuari -> Document: Demana hash del document
+Document -> Document: Calcula Hash del Document
+Document --> Usuari: Hash del Document
 
-Laboratori -> HashGen: Envia Document PDF
-HashGen -> HashGen: Calcula Hash del Document
-HashGen --> Laboratori: Hash del Document
+Usuari -> RegistreSignatures: Demana nonce
+RegistreSignatures --> Usuari: nonce
 
-Laboratori -> Signador: Envia Hash del Document i Clau Privada
-Signador -> Signador: Signa el Hash amb la Clau Privada
-Signador --> Laboratori: Signatura Digital
+Usuari -> Usuari: Genera signatura
+     
+Usuari -> Laboratori: Envia signatura generada
 
-Laboratori -> BlockchainReg: Envia Hash del Document, Signatura Digital i Clau Pública
-BlockchainReg -> Blockchain: Crea Transacció
-Blockchain <-- Blockchain: Transacció Confirmada
-BlockchainReg --> Laboratori: ID de Transacció
-
-Laboratori -> Laboratori: Emmagatzema ID de Transacció
+Laboratori -> RegistreSignatures: Petició afegir signatura
+RegistreSignatures -> RegistreSignatures: Verifica signatura
+alt Verificació de signatura correcta
+RegistreSignatures -> Signatura: Crea signatura
+RegistreSignatures --> Laboratori: Transacció Confirmada
+Laboratori --> Usuari: Transacció Confirmada
+else Error al verificar signatura
+RegistreSignatures --> Laboratori: Transacció revertida
+Laboratori --> Usuari: Transacció revertida
+end
 @enduml

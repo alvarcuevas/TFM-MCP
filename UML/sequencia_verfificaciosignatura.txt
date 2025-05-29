@@ -1,36 +1,26 @@
 @startuml
-actor UsuariVerificador
-boundary InterficieUsuari
-control ServeiVerificacio
-entity Document
-control GestorBlockchain
-entity SignaturaBlockchain
-entity Laboratori
+actor Usuari
+participant Document
+control Blockchain
+participant RegistreSignatures
+entity Signatura
+participant RegistreAcreditacions
+entity Signatari
 
-UsuariVerificador -> InterficieUsuari: Selecciona Document
-InterficieUsuari -> ServeiVerificacio: Sol·licita Verificació()
-ServeiVerificacio -> Document: calcularHash()
-Document --> ServeiVerificacio: hashDocCalculat
+Usuari -> Document: Demana hash del document
+Document -> Document: Calcula Hash del Document
+Document --> Usuari: Hash del Document
 
-ServeiVerificacio -> GestorBlockchain: obtenirInformacioSignatura()
-GestorBlockchain -> Blockchain: Consulta Registre de Documents Signats
-Blockchain --> GestorBlockchain: InformacioSignatura()
+Usuari -> RegistreSignatures: Petició verificació signatura
+RegistreSignatures -> Signatura: Consulta signatura
+Signatura --> RegistreSignatures: Dades de signatura
+RegistreSignatures -> RegistreSignatures: Verifica signatura
+RegistreSignatures --> Usuari: Resultat verificació
 
-alt InformacioSignatura trobada
-  GestorBlockchain -> SignaturaBlockchain: crea(infoSig)
-  ServeiVerificacio -> GestorBlockchain: obtenirClauPublicaLaboratori()
-  GestorBlockchain -> Blockchain: Consulta Registre de Documents Signats
-  Blockchain --> GestorBlockchain: clauPublicaLaboratoriRecuperada
-  ServeiVerificacio -> Laboratori: obtenirClauPublica()
-  Laboratori --> ServeiVerificacio: clauPublica
-
-  ServeiVerificacio -> SignaturaBlockchain: verificar(hashDocumentCalculat, clauPublica)
-  SignaturaBlockchain --> ServeiVerificacio: esValida
-else InformacioSignatura no trobada
-  ServeiVerificacio --> InterficieUsuari: Signatura no trobada
-  InterficieUsuari -> UsuariVerificador: Mostra resultat (no trobat)
+alt Opcional
+Usuari -> RegistreAcreditacions: Petició validació signatari
+RegistreAcreditacions -> Signatari: Consulta signatari
+Signatari --> RegistreAcreditacions: Validació signatari
+RegistreAcreditacions --> Usuari: Validació signatari
 end
-
-ServeiVerificacio --> InterficieUsuari: Resultat Verificació()
-InterficieUsuari -> UsuariVerificador: Mostra resultat (trobat)
 @enduml

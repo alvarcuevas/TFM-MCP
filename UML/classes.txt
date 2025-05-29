@@ -89,19 +89,24 @@ package "Blockchain" {
     +isVerified: Boolean
   }
   
-  struct Signatari {
+  struct SignatariRegistrat {
     +clauPublicaUsuari: String
     +nom: String
     +isVerified: Boolean
-    +nextNonece: Integer
+  }
+  
+  struct Signatari {
+    +clauPublicaUsuari: String
+    +nextNonce: Integer
   }
 
 }    
 
-RegistreSignatures -- Signatura : conté
-RegistreAcreditacions -- Acreditació : conté
-RegistreAcreditacions -- LaboratoriRegistrat : conté
-RegistreAcreditacions -- Signatari : conté
+RegistreSignatures --> Signatura : <list>
+RegistreSignatures --> Signatari : <list>
+RegistreAcreditacions --> Acreditació : <list>
+RegistreAcreditacions --> LaboratoriRegistrat : <list>
+RegistreAcreditacions --> SignatariRegistrat : <list>
 Usuari --* RegistreAcreditacions : Afegeix/Anul·la acreditació >
 Usuari ..> RegistreAcreditacions : Consulta
 Usuari ..> RegistreSignatures : Consulta
