@@ -5,7 +5,7 @@ control Blockchain
 participant RegistreSignatures
 entity Signatura
 participant RegistreAcreditacions
-entity Signatari
+entity SignatariRegistrat
 
 Usuari -> Document: Demana hash del document
 Document -> Document: Calcula Hash del Document
@@ -19,8 +19,8 @@ RegistreSignatures --> Usuari: Resultat verificació
 
 alt Opcional
 Usuari -> RegistreAcreditacions: Petició validació signatari
-RegistreAcreditacions -> Signatari: Consulta signatari
-Signatari --> RegistreAcreditacions: Validació signatari
+RegistreAcreditacions -> SignatariRegistrat: Consulta signatari
+SignatariRegistrat --> RegistreAcreditacions: Validació signatari
 RegistreAcreditacions --> Usuari: Validació signatari
 end
 @enduml

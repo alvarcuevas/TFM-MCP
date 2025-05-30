@@ -4,14 +4,18 @@ participant Document
 participant Laboratori
 control Blockchain
 participant RegistreSignatures
+entity Signatari
+entity Signatura
      
-Usuari -> Document: Demana hash del document
-Document -> Document: Calcula Hash del Document
-Document --> Usuari: Hash del Document
+Usuari -> Document: Demana hash
+Document -> Document: Calcula hash
+Document --> Usuari: hash
 
 Usuari -> RegistreSignatures: Demana nonce
+RegistreSignatures -> Signatari: Consulta nonce
+Signatari --> RegistreSignatures: nonce
 RegistreSignatures --> Usuari: nonce
-
+    
 Usuari -> Usuari: Genera signatura
      
 Usuari -> Laboratori: Envia signatura generada
