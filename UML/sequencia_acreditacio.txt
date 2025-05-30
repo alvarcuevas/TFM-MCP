@@ -10,8 +10,8 @@ RegistreAcreditacions -> SignatariRegistrat: Consulta d'auditor
 SignatariRegistrat --> RegistreAcreditacions: Resposta d'auditor
 alt És auditor
   RegistreAcreditacions -> Acreditació: Afegir o modificar acreditació
-  RegistreAcreditacions -> Usuari: Transacció confirmada
+  RegistreAcreditacions --> Usuari: Transacció confirmada
 else No és auditor
-  RegistreAcreditacions -> Usuari: Transacció revertida
+  RegistreAcreditacions --> Usuari: Transacció revertida
 end
 @enduml
