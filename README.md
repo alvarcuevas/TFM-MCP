@@ -1,3 +1,5 @@
+Codi font de la PoC i diagrames del Projecte de Fi de Màster: «Autenticació i validació de resultats, informes i acreditacions amb blockchain en laboratoris agroalimentaris: definició i prova de concepte», presentat a juny de 2025 per obtindre títol de Màster universitari en Ciberseguretat i Privadesa per la Universitat Oberta de Catalunya.
+
 Contingut:
  - UML: Diagrames de classes i components, i diagrames de seqüència presentats.
  - SOL: Contractes Solidity.
