@@ -58,9 +58,9 @@ def get_or_create_ethereum_key():
                     print("Clau de compte recuperat i carregat.")
                 except Exception as e:
                     print(f"Error al carregar la clau emmagatzemada: {e}. Generant una nova.")
-                    private_key = None # Invalidate existing key if it's bad
+                    private_key = None 
     
-    if private_key is None: # If no valid key was loaded or if it was invalid
+    if private_key is None: # Si no hi ha clau generada, generem una de nova
         print("No hi ha clau generada, generant una de nova...")
         account = Account.create()
         private_key = account.key.hex()
@@ -71,10 +71,8 @@ def get_or_create_ethereum_key():
     
     return private_key, account_address
 
-# --- Web3 Initialization ---
 private_key, account_address = get_or_create_ethereum_key()
 
-# Now display the identifier (address) after it's been determined
 print(f"Adreça del compte utilitzat: {account_address}")
 
 w3 = Web3(Web3.HTTPProvider(ETHEREUM_NODE_URL))
